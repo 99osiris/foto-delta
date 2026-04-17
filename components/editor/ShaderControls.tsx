@@ -93,7 +93,7 @@ function applyIntensity(store: ReturnType<typeof useEditorStore.getState>, level
   }
 }
 
-export default function ShaderControls() {
+export default function ShaderControls({ hidePanelPresets = false }: { hidePanelPresets?: boolean }) {
   const store = useEditorStore()
   const { mode, vhsParams, digiParams, setVhsParam, setDigiParam, applyPreset } = store
   const [activePreset, setActivePreset] = useState<PresetId>('vhs94')
@@ -121,8 +121,21 @@ export default function ShaderControls() {
       overflow: 'hidden',
       fontFamily: "'Courier New', monospace",
     }}>
-    <div style={{ width: '100%', maxWidth: 256, margin: '0 auto', background: bg, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0, flex: 1, minHeight: 0, ...mono }}>
+    <div style={{
+      width: '100%',
+      maxWidth: hidePanelPresets ? '100%' : 256,
+      margin: '0 auto',
+      background: bg,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      flexShrink: 0,
+      flex: 1,
+      minHeight: 0,
+      ...mono,
+    }}>
 
+      {!hidePanelPresets && (
       <div style={{ padding: '12px 12px 10px', borderBottom: border }}>
         <div style={{ fontSize: 8, letterSpacing: 2, color: dimmer, marginBottom: 8 }}>PRESETS</div>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -139,6 +152,7 @@ export default function ShaderControls() {
           ))}
         </div>
       </div>
+      )}
 
       <div style={{ padding: '10px 12px', borderBottom: border }}>
         <div style={{ fontSize: 8, letterSpacing: 2, color: dimmer, marginBottom: 8 }}>INTENSITY</div>

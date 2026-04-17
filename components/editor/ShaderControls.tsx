@@ -68,20 +68,20 @@ function applyIntensity(store: ReturnType<typeof useEditorStore.getState>, level
 
   if (mode === 'vhs') {
     const base = DEFAULT_VHS_PARAMS
-    store.setVhsParam('chromaShift',       Math.min(8,    base.chromaShift       * mul))
-    store.setVhsParam('jitterAmp',         Math.min(4,    base.jitterAmp         * mul))
-    store.setVhsParam('lumaNoiseAmt',      Math.min(0.12, base.lumaNoiseAmt     * mul))
-    store.setVhsParam('chromaNoiseAmt',    Math.min(0.08, base.chromaNoiseAmt   * mul))
-    store.setVhsParam('dropoutCount',      Math.min(15,   Math.round(base.dropoutCount * mul)))
-    store.setVhsParam('headSwitchHeight',  Math.min(50,   base.headSwitchHeight  * mul))
-    store.setVhsParam('chromaSmearI',      Math.min(0.3,  base.chromaSmearI      * mul))
-    store.setVhsParam('chromaSmearQ',      Math.min(0.3,  base.chromaSmearQ      * mul))
-    store.setVhsParam('vignette',          Math.min(1.0,  base.vignette          * mul))
+    store.setVhsParam('chromaShift',       Math.min(12,   base.chromaShift       * mul))
+    store.setVhsParam('jitterAmp',         Math.min(5,    base.jitterAmp         * mul))
+    store.setVhsParam('lumaNoiseAmt',      Math.min(0.15, base.lumaNoiseAmt     * mul))
+    store.setVhsParam('chromaNoiseAmt',    Math.min(0.10, base.chromaNoiseAmt   * mul))
+    store.setVhsParam('dropoutCount',      Math.min(20,   Math.round(base.dropoutCount * mul)))
+    store.setVhsParam('headSwitchHeight',  Math.min(60,   base.headSwitchHeight  * mul))
+    store.setVhsParam('chromaI',           Math.min(0.3,  base.chromaI         * mul))
+    store.setVhsParam('chromaQ',           Math.min(0.3,  base.chromaQ         * mul))
+    store.setVhsParam('vignette',          Math.min(1.0,  base.vignette        * mul))
     store.setVhsParam('jpegQuality',       Math.max(0,    100 - (100 - base.jpegQuality) * mul))
     store.setVhsParam('scanlineIntensity', Math.max(0.4,  base.scanlineIntensity - (mul - 1) * 0.08))
-    store.setVhsParam('ringing',           Math.min(5,    base.ringing           * mul))
-    store.setVhsParam('chromaSub',         Math.min(1.0,  base.chromaSub         * mul))
-    store.setVhsParam('downscale',         Math.max(0.15, base.downscale         / mul))
+    store.setVhsParam('ringing',           Math.min(6,    base.ringing           * mul))
+    store.setVhsParam('colorDepth',        Math.min(1.0,  base.colorDepth        * mul))
+    store.setVhsParam('headCapNoise',      Math.min(1.0,  base.headCapNoise      * mul))
   } else {
     const base = DEFAULT_DIGI_PARAMS
     store.setDigiParam('bayerNoise',      Math.min(0.1,  base.bayerNoise      * mul))
@@ -179,39 +179,42 @@ export default function ShaderControls({ hidePanelPresets = false }: { hidePanel
 
         {mode === 'vhs' && (
           <>
-            <SectionLabel>MEDIA DEGRADATION</SectionLabel>
-            <Slider label="Native resolution (downscale)" value={vhsParams.downscale} min={0} max={1} step={0.01} onChange={vS('downscale')} />
-            <Slider label="JPEG quality" value={vhsParams.jpegQuality} min={0} max={100} step={1} decimals={0} onChange={vS('jpegQuality')} />
-            <Slider label="Chroma subsampling" value={vhsParams.chromaSub} min={0} max={1} onChange={vS('chromaSub')} />
-            <Slider label="Ringing" value={vhsParams.ringing} min={0} max={5} step={0.05} onChange={vS('ringing')} />
-            <Slider label="Ringing width" value={vhsParams.ringingWidth} min={0.5} max={4} step={0.05} onChange={vS('ringingWidth')} />
-
-            <SectionLabel>SIGNAL</SectionLabel>
-            <Slider label="Chroma shift" value={vhsParams.chromaShift} min={0} max={8} step={0.05} onChange={vS('chromaShift')} />
+            <SectionLabel>PASS 1 — SIGNAL VHS</SectionLabel>
+            <Slider label="Chroma shift" value={vhsParams.chromaShift} min={0} max={12} step={0.05} onChange={vS('chromaShift')} />
+            <Slider label="Chroma shift random" value={vhsParams.chromaShiftRandom} min={0} max={1} onChange={vS('chromaShiftRandom')} />
             <Slider label="Luma smear" value={vhsParams.lumaSmear} min={0} max={1} onChange={vS('lumaSmear')} />
-            <Slider label="Chroma smear I" value={vhsParams.chromaSmearI} min={0} max={0.3} step={0.005} onChange={vS('chromaSmearI')} />
-            <Slider label="Chroma smear Q" value={vhsParams.chromaSmearQ} min={0} max={0.3} step={0.005} onChange={vS('chromaSmearQ')} />
+            <Slider label="Chroma I bleed" value={vhsParams.chromaI} min={0} max={0.3} step={0.005} onChange={vS('chromaI')} />
+            <Slider label="Chroma Q bleed" value={vhsParams.chromaQ} min={0} max={0.3} step={0.005} onChange={vS('chromaQ')} />
             <Slider label="Vertical bleed" value={vhsParams.lumaVertBleed} min={0} max={0.8} onChange={vS('lumaVertBleed')} />
-
-            <SectionLabel>NOISE & ARTIFACTS</SectionLabel>
-            <Slider label="Luma noise" value={vhsParams.lumaNoiseAmt} min={0} max={0.12} step={0.002} onChange={vS('lumaNoiseAmt')} />
-            <Slider label="Chroma noise" value={vhsParams.chromaNoiseAmt} min={0} max={0.08} step={0.002} onChange={vS('chromaNoiseAmt')} />
+            <Slider label="Luma noise" value={vhsParams.lumaNoiseAmt} min={0} max={0.15} step={0.002} onChange={vS('lumaNoiseAmt')} />
+            <Slider label="Chroma noise" value={vhsParams.chromaNoiseAmt} min={0} max={0.10} step={0.002} onChange={vS('chromaNoiseAmt')} />
             <Slider label="Interlacing" value={vhsParams.interlace} min={0} max={1} onChange={vS('interlace')} />
-            <Slider label="Dropout count" value={vhsParams.dropoutCount} min={0} max={15} step={1} decimals={0} onChange={vS('dropoutCount')} />
-            <Slider label="Dropout intensity" value={vhsParams.dropoutIntensity} min={0} max={1} onChange={vS('dropoutIntensity')} />
 
-            <SectionLabel>MECHANICAL</SectionLabel>
-            <Slider label="Jitter amplitude" value={vhsParams.jitterAmp} min={0} max={4} step={0.05} onChange={vS('jitterAmp')} />
+            <SectionLabel>PASS 1 — MÉCANIQUE</SectionLabel>
+            <Slider label="Jitter amplitude" value={vhsParams.jitterAmp} min={0} max={5} step={0.05} onChange={vS('jitterAmp')} />
             <Slider label="Jitter frequency" value={vhsParams.jitterFreq} min={0} max={0.3} step={0.005} onChange={vS('jitterFreq')} />
             <Slider label="Jitter roughness" value={vhsParams.jitterRoughness} min={0} max={1} onChange={vS('jitterRoughness')} />
-            <Slider label="Head switch height" value={vhsParams.headSwitchHeight} min={0} max={50} step={1} decimals={0} onChange={vS('headSwitchHeight')} />
-            <Slider label="Head switch amount" value={vhsParams.headSwitchAmt} min={0} max={0.08} step={0.002} onChange={vS('headSwitchAmt')} />
-
-            <SectionLabel>DISPLAY</SectionLabel>
+            <Slider label="Head switch height" value={vhsParams.headSwitchHeight} min={0} max={60} step={1} decimals={0} onChange={vS('headSwitchHeight')} />
+            <Slider label="Head switch amount" value={vhsParams.headSwitchAmt} min={0} max={0.1} step={0.002} onChange={vS('headSwitchAmt')} />
+            <Slider label="Head cap noise" value={vhsParams.headCapNoise} min={0} max={1} onChange={vS('headCapNoise')} />
+            <Slider label="Bottom distortion height" value={vhsParams.bottomDistHeight} min={0} max={80} step={1} decimals={0} onChange={vS('bottomDistHeight')} />
+            <Slider label="Bottom distortion amount" value={vhsParams.bottomDistAmt} min={0} max={1} onChange={vS('bottomDistAmt')} />
+            <Slider label="Dropout count" value={vhsParams.dropoutCount} min={0} max={20} step={1} decimals={0} onChange={vS('dropoutCount')} />
+            <Slider label="Dropout max length" value={vhsParams.dropoutMaxLen} min={0} max={300} step={1} decimals={0} onChange={vS('dropoutMaxLen')} />
+            <Slider label="Dropout intensity" value={vhsParams.dropoutIntensity} min={0} max={1} onChange={vS('dropoutIntensity')} />
             <Slider label="Scanlines" value={vhsParams.scanlineIntensity} min={0} max={1} onChange={vS('scanlineIntensity')} />
-            <Slider label="Vignette" value={vhsParams.vignette} min={0} max={1} onChange={vS('vignette')} />
+
+            <SectionLabel>PASS 2 — RECOMPRESSION INTERNET</SectionLabel>
+            <Slider label="JPEG quality" value={vhsParams.jpegQuality} min={0} max={100} step={1} decimals={0} onChange={vS('jpegQuality')} />
+            <Slider label="JPEG block size" value={vhsParams.jpegBlockSize} min={4} max={16} step={1} decimals={0} onChange={vS('jpegBlockSize')} />
+            <Slider label="Color depth (quantize)" value={vhsParams.colorDepth} min={0} max={1} onChange={vS('colorDepth')} />
+            <Slider label="Ringing" value={vhsParams.ringing} min={0} max={6} step={0.05} onChange={vS('ringing')} />
+            <Slider label="Ringing width" value={vhsParams.ringingWidth} min={0.5} max={4} step={0.05} onChange={vS('ringingWidth')} />
+
+            <SectionLabel>NIVEAUX</SectionLabel>
             <Slider label="Black crush" value={vhsParams.blackCrush} min={0} max={30} step={1} decimals={0} onChange={vS('blackCrush')} />
             <Slider label="White crush" value={vhsParams.whiteCrush} min={220} max={255} step={1} decimals={0} onChange={vS('whiteCrush')} />
+            <Slider label="Vignette" value={vhsParams.vignette} min={0} max={1} onChange={vS('vignette')} />
 
             <SectionLabel>COLOR CAST</SectionLabel>
             <Slider label="Red" value={vhsParams.colorCast[0]} min={0.7} max={1.3} onChange={v => setVhsParam('colorCast', [v, vhsParams.colorCast[1], vhsParams.colorCast[2]])} />

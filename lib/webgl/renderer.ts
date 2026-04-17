@@ -7,15 +7,12 @@ import digiFragSrc  from '../shaders/digicam.frag'
 export type FilterMode = 'vhs' | 'digicam'
 
 export interface VHSParams {
-  downscale: number
-  jpegQuality: number
-  chromaSub: number
-  ringing: number
-  ringingWidth: number
+  // Pass 1 — VHS analog
   chromaShift: number
+  chromaShiftRandom: number
   lumaSmear: number
-  chromaSmearI: number
-  chromaSmearQ: number
+  chromaI: number
+  chromaQ: number
   lumaVertBleed: number
   lumaNoiseAmt: number
   chromaNoiseAmt: number
@@ -24,42 +21,58 @@ export interface VHSParams {
   jitterRoughness: number
   headSwitchHeight: number
   headSwitchAmt: number
+  headCapNoise: number
+  bottomDistHeight: number
+  bottomDistAmt: number
   dropoutCount: number
+  dropoutMaxLen: number
   dropoutIntensity: number
   interlace: number
   scanlineIntensity: number
-  vignette: number
+  // Pass 2 — Internet 90s recompression
+  jpegQuality: number
+  jpegBlockSize: number
+  colorDepth: number
+  ringing: number
+  ringingWidth: number
+  // Display + levels
   blackCrush: number
   whiteCrush: number
   colorCast: [number, number, number]
+  vignette: number
 }
 
 export const DEFAULT_VHS_PARAMS: VHSParams = {
-  downscale: 0.5,
-  jpegQuality: 45,
-  chromaSub: 0.8,
-  ringing: 2.5,
-  ringingWidth: 1.5,
-  chromaShift: 2.5,
-  lumaSmear: 0.35,
-  chromaSmearI: 0.08,
-  chromaSmearQ: 0.10,
-  lumaVertBleed: 0.3,
-  lumaNoiseAmt: 0.03,
-  chromaNoiseAmt: 0.015,
-  jitterAmp: 0.4,
+  chromaShift: 3.0,
+  chromaShiftRandom: 0.4,
+  lumaSmear: 0.38,
+  chromaI: 0.06,
+  chromaQ: 0.09,
+  lumaVertBleed: 0.35,
+  lumaNoiseAmt: 0.022,
+  chromaNoiseAmt: 0.012,
+  jitterAmp: 0.5,
   jitterFreq: 0.05,
   jitterRoughness: 0.3,
-  headSwitchHeight: 12,
-  headSwitchAmt: 0.03,
+  headSwitchHeight: 15,
+  headSwitchAmt: 0.035,
+  headCapNoise: 0.5,
+  bottomDistHeight: 28,
+  bottomDistAmt: 0.38,
   dropoutCount: 2,
-  dropoutIntensity: 0.7,
-  interlace: 0.6,
-  scanlineIntensity: 0.8,
-  vignette: 0.25,
-  blackCrush: 14,
-  whiteCrush: 232,
-  colorCast: [0.95, 1.03, 1.0] as [number, number, number],
+  dropoutMaxLen: 85,
+  dropoutIntensity: 0.78,
+  interlace: 0.55,
+  scanlineIntensity: 0.76,
+  jpegQuality: 58,
+  jpegBlockSize: 8,
+  colorDepth: 0.45,
+  ringing: 3.2,
+  ringingWidth: 1.8,
+  blackCrush: 16,
+  whiteCrush: 230,
+  colorCast: [0.95, 1.05, 1.0] as [number, number, number],
+  vignette: 0.28,
 }
 
 export interface DigiParams {
@@ -203,15 +216,12 @@ export class VHSRenderer {
       const p = params as VHSParams
       setUniforms(gl, this.activeProgram, {
         ...base,
-        u_downscale:         p.downscale,
-        u_jpegQuality:       p.jpegQuality,
-        u_chromaSub:         p.chromaSub,
-        u_ringing:           p.ringing,
-        u_ringingWidth:      p.ringingWidth,
+        // Pass 1
         u_chromaShift:       p.chromaShift,
+        u_chromaShiftRandom: p.chromaShiftRandom,
         u_lumaSmear:         p.lumaSmear,
-        u_chromaSmearI:      p.chromaSmearI,
-        u_chromaSmearQ:      p.chromaSmearQ,
+        u_chromaI:           p.chromaI,
+        u_chromaQ:           p.chromaQ,
         u_lumaVertBleed:     p.lumaVertBleed,
         u_lumaNoiseAmt:      p.lumaNoiseAmt,
         u_chromaNoiseAmt:    p.chromaNoiseAmt,
@@ -220,14 +230,25 @@ export class VHSRenderer {
         u_jitterRoughness:   p.jitterRoughness,
         u_headSwitchHeight:  p.headSwitchHeight,
         u_headSwitchAmt:     p.headSwitchAmt,
+        u_headCapNoise:      p.headCapNoise,
+        u_bottomDistHeight:  p.bottomDistHeight,
+        u_bottomDistAmt:     p.bottomDistAmt,
         u_dropoutCount:      p.dropoutCount,
+        u_dropoutMaxLen:     p.dropoutMaxLen,
         u_dropoutIntensity:  p.dropoutIntensity,
         u_interlace:         p.interlace,
         u_scanlineIntensity: p.scanlineIntensity,
-        u_vignette:          p.vignette,
+        // Pass 2
+        u_jpegQuality:       p.jpegQuality,
+        u_jpegBlockSize:     p.jpegBlockSize,
+        u_colorDepth:        p.colorDepth,
+        u_ringing:           p.ringing,
+        u_ringingWidth:      p.ringingWidth,
+        // Display
         u_blackCrush:        p.blackCrush,
         u_whiteCrush:        p.whiteCrush,
         u_colorCast:         p.colorCast,
+        u_vignette:          p.vignette,
       })
     } else {
       const p = params as DigiParams

@@ -5,44 +5,41 @@ uniform sampler2D u_texture;
 uniform float u_time;
 uniform vec2  u_resolution;
 
-// MEDIA DEGRADATION
-uniform float u_downscale;        // 0.0-1.0 — simule résolution native basse (défaut 0.5 = 640px sur 1280)
-uniform float u_jpegQuality;      // 0-100 — qualité JPEG (défaut 45)
-uniform float u_chromaSub;        // 0.0-1.0 — subsampling chroma 4:2:0 (défaut 0.8)
-uniform float u_ringing;          // 0.0-5.0 — overshoot sur les bords (défaut 2.5)
-uniform float u_ringingWidth;     // 0.5-4.0 — largeur du ringing en pixels (défaut 1.5)
+// PASS 1 — VHS ANALOG SIGNAL
+uniform float u_chromaShift;       // 0–12   défaut 3.0   — décalage chroma latéral px
+uniform float u_chromaShiftRandom; // 0–1    défaut 0.4   — part aléatoire par ligne (Y/C random)
+uniform float u_lumaSmear;         // 0–1    défaut 0.38  — bande passante luma (1=net, 0=très flou)
+uniform float u_chromaI;           // 0–0.3  défaut 0.06  — blur axe I (orange-cyan)
+uniform float u_chromaQ;           // 0–0.3  défaut 0.09  — blur axe Q (vert-magenta, plus étroit)
+uniform float u_lumaVertBleed;     // 0–0.8  défaut 0.35  — smear vertical luma
+uniform float u_lumaNoiseAmt;      // 0–0.15 défaut 0.022 — bruit luma (tape hiss)
+uniform float u_chromaNoiseAmt;    // 0–0.10 défaut 0.012 — bruit chroma (color speckle)
+uniform float u_jitterAmp;         // 0–5    défaut 0.5   — amplitude jitter horizontal
+uniform float u_jitterFreq;        // 0–0.3  défaut 0.05  — fréquence onde jitter
+uniform float u_jitterRoughness;   // 0–1    défaut 0.3   — part aléatoire du jitter
+uniform float u_headSwitchHeight;  // 0–60   défaut 15    — hauteur bande head switch
+uniform float u_headSwitchAmt;     // 0–0.1  défaut 0.035 — intensité head switch
+uniform float u_headCapNoise;      // 0–1    défaut 0.5   — bandes de bruit dense au-dessus head switch
+uniform float u_bottomDistHeight;  // 0–80   défaut 28    — zone distorsion bas frame
+uniform float u_bottomDistAmt;     // 0–1    défaut 0.38  — intensité distorsion basse
+uniform float u_dropoutCount;      // 0–20   défaut 2     — nb rayures dropout
+uniform float u_dropoutMaxLen;     // 0–300  défaut 85    — longueur max dropout px
+uniform float u_dropoutIntensity;  // 0–1    défaut 0.78  — intensité dropout
+uniform float u_interlace;         // 0–1    défaut 0.55  — entrelacement lignes paires/impaires
+uniform float u_scanlineIntensity; // 0–1    défaut 0.76  — scanlines CRT
 
-// SIGNAL
-uniform float u_chromaShift;      // 0-8 — décalage chroma horizontal px (défaut 2.5)
-uniform float u_lumaSmear;        // 0.0-1.0 — blur luma horizontal (défaut 0.35)
-uniform float u_chromaSmearI;     // 0.0-0.3 — blur chroma axe I (défaut 0.08)
-uniform float u_chromaSmearQ;     // 0.0-0.3 — blur chroma axe Q (défaut 0.10)
-uniform float u_lumaVertBleed;    // 0.0-0.8 — smear vertical luma (défaut 0.3)
+// PASS 2 — INTERNET 90s RECOMPRESSION
+uniform float u_jpegQuality;       // 0–100  défaut 58    — qualité JPEG (lower = plus d'artefacts)
+uniform float u_jpegBlockSize;     // 4–16   défaut 8     — taille blocs DCT (8 = standard JPEG)
+uniform float u_colorDepth;        // 0–1    défaut 0.45  — réduction profondeur couleur (Quantize)
+uniform float u_ringing;           // 0–6    défaut 3.2   — overshoot signal (ringing)
+uniform float u_ringingWidth;      // 0.5–4  défaut 1.8   — largeur ringing px
 
-// NOISE
-uniform float u_lumaNoiseAmt;     // 0.0-0.12 — bruit luma (défaut 0.03)
-uniform float u_chromaNoiseAmt;   // 0.0-0.08 — bruit chroma (défaut 0.015)
-
-// MECHANICAL
-uniform float u_jitterAmp;        // 0.0-4.0 — amplitude jitter horizontal (défaut 0.4)
-uniform float u_jitterFreq;       // 0.0-0.3 — fréquence jitter (défaut 0.05)
-uniform float u_jitterRoughness;  // 0.0-1.0 — granularité jitter (défaut 0.3)
-uniform float u_headSwitchHeight; // 0-50 — hauteur bande head switch bas frame (défaut 12)
-uniform float u_headSwitchAmt;    // 0.0-0.08 — intensité head switch (défaut 0.03)
-uniform float u_dropoutCount;     // 0-15 — nb de rayures dropout (défaut 2)
-uniform float u_dropoutIntensity; // 0.0-1.0 — intensité dropout (défaut 0.7)
-
-// INTERLACING
-uniform float u_interlace;        // 0.0-1.0 — force de l'interlacing (défaut 0.6)
-
-// DISPLAY
-uniform float u_scanlineIntensity;// 0.0-1.0 — scanlines CRT (défaut 0.8)
-uniform float u_vignette;         // 0.0-1.0 — vignette (défaut 0.25)
-
-// LEVELS (écrasement brutal, pas gamma doux)
-uniform float u_blackCrush;       // 0-30 — élève le plancher noir (défaut 14)
-uniform float u_whiteCrush;       // 220-255 — plafonne les blancs (défaut 232)
-uniform vec3  u_colorCast;        // cast couleur par canal (défaut 0.95/1.03/1.0)
+// DISPLAY + LEVELS
+uniform float u_blackCrush;        // 0–30   défaut 16    — plancher noir
+uniform float u_whiteCrush;        // 220–255 défaut 230  — plafond blanc
+uniform vec3  u_colorCast;         // R/G/B  défaut 0.95/1.05/1.0
+uniform float u_vignette;          // 0–1    défaut 0.28
 
 in vec2 v_uv;
 out vec4 fragColor;
@@ -54,13 +51,14 @@ float hash1(float n) {
   return fract(sin(n) * 43758.5453);
 }
 float noise2(vec2 p) {
-  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 i = floor(p);
+  vec2 f = fract(p);
   f = f * f * (3.0 - 2.0 * f);
-  return mix(
-    mix(hash(i), hash(i + vec2(1.0,0.0)), f.x),
-    mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), f.x),
-    f.y
-  );
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
 vec3 rgb2yiq(vec3 c) {
@@ -78,191 +76,220 @@ vec3 yiq2rgb(vec3 y) {
   );
 }
 
-// Sample avec clamp safe
-vec3 sampleTex(vec2 uv) {
+vec3 sampleAt(vec2 uv) {
   return texture(u_texture, clamp(uv, 0.001, 0.999)).rgb;
 }
 
 void main() {
-  vec2 uv = v_uv;
-  vec2 px = 1.0 / u_resolution;
-  float fr = floor(u_time * 30.0);
+  vec2 uv    = v_uv;
+  vec2 px    = 1.0 / u_resolution;
+  float fr   = floor(u_time * 30.0);
+  float lineY = floor(uv.y * u_resolution.y);
 
-  // ── STEP 1: DOWNSCALE — simuler résolution native basse ──────────────────
-  // On pixelise l'UV pour simuler une vraie résolution basse
-  // downscale=0.5 → simule 640px sur 1280px de large
-  if (u_downscale < 0.99) {
-    float factor = mix(8.0, 1.0, u_downscale);
-    vec2 nativeRes = u_resolution / factor;
-    uv = (floor(uv * nativeRes) + 0.5) / nativeRes;
-  }
+  // ════════════════════════════════════════════════════════
+  // PASS 1 — VHS ANALOG SIGNAL
+  // ════════════════════════════════════════════════════════
 
-  // ── STEP 2: MECHANICAL WARP (avant tout sampling) ────────────────────────
-  float lineY = floor(v_uv.y * u_resolution.y);
-  float jSeed = floor(lineY * mix(1.0, 0.1, u_jitterRoughness));
-  float jWave = sin(v_uv.y * u_jitterFreq * 80.0 + fr * 0.09);
-  float jRand = (hash(vec2(jSeed, fr * 0.3)) - 0.5) * 2.0;
-  uv.x += jWave * jRand * u_jitterAmp * px.x;
+  // ── 1A. MECHANICAL WARP ─────────────────────────────────
+  // Jitter: combinaison onde + aléatoire par ligne
+  float jSeed  = floor(lineY * mix(1.0, 0.08, u_jitterRoughness));
+  float jWave  = sin(uv.y * u_jitterFreq * 80.0 + fr * 0.09);
+  float jRand  = (hash(vec2(jSeed, fr * 0.3)) - 0.5) * 2.0;
+  float jitter = jWave * jRand * u_jitterAmp * px.x;
+  uv.x += jitter;
 
-  float fromBot = (1.0 - v_uv.y) * u_resolution.y;
+  // Head switching: bande basse frame, déplacement horizontal brusque
+  float fromBot = (1.0 - uv.y) * u_resolution.y;
   if (fromBot < u_headSwitchHeight) {
-    float t = fromBot / max(u_headSwitchHeight, 0.001);
-    float hn = hash(vec2(floor(v_uv.y * 400.0), fr)) - 0.5;
-    uv.x += hn * u_headSwitchAmt * (1.0 - t * t) * 0.05;
+    float t  = fromBot / max(u_headSwitchHeight, 0.001);
+    float hn = hash(vec2(floor(uv.y * 600.0), fr)) - 0.5;
+    uv.x    += hn * u_headSwitchAmt * (1.0 - t * t) * 0.05;
   }
+
+  // Bottom distortion: zone plus large en-dessous
+  float botZone = u_headSwitchHeight + u_bottomDistHeight;
+  if (fromBot < botZone && fromBot >= u_headSwitchHeight) {
+    float t2 = (fromBot - u_headSwitchHeight) / max(u_bottomDistHeight, 0.001);
+    float bd = (noise2(vec2(uv.y * 18.0, fr * 0.035)) - 0.5);
+    uv.x    += bd * u_bottomDistAmt * (1.0 - t2) * px.x * 14.0;
+  }
+
   uv = clamp(uv, 0.001, 0.999);
 
-  // ── STEP 3: JPEG DCT BLOCKS ───────────────────────────────────────────────
-  // Vrais artefacts de compression: poster dans les zones lisses
-  // Plus la qualité est basse, plus les blocs sont visibles
-  vec3 col = sampleTex(uv);
-  float blockStr = max(0.0, (100.0 - u_jpegQuality) / 100.0);
+  // ── 1B. RANDOM Y/C SHIFT (insight clé du changelog Heisei v2) ────────────
+  // Le décalage chroma N'EST PAS uniforme — il varie aléatoirement par ligne
+  // C'est ce qui donne ce côté "vivant" au lieu d'un simple offset uniforme
+  float lineHash  = hash(vec2(lineY, fr * 0.2));
+  float randShift = mix(1.0, lineHash * 2.0, u_chromaShiftRandom);
+  float cs        = u_chromaShift * randShift * px.x;
 
-  if (blockStr > 0.005) {
-    // Blocs 8x8 sur la résolution effective
-    vec2 bRes = u_resolution * mix(1.0 / 8.0, 1.0 / 4.0, blockStr);
-    vec2 bUV  = (floor(uv * bRes) + 0.5) / bRes;
-    vec3 bCol = sampleTex(bUV);
+  vec3 col;
+  col.r = sampleAt(uv - vec2(cs * 0.65, 0.0)).r;
+  col.g = sampleAt(uv).g;
+  col.b = sampleAt(uv + vec2(cs * 0.35, 0.0)).b;
 
-    // Appliquer seulement dans les zones LISSES (pas sur les edges)
-    // Un edge fort → peu de blocage (JPEG est smarter que ça)
-    float lumaC  = dot(col,  vec3(0.299, 0.587, 0.114));
-    float lumaB  = dot(bCol, vec3(0.299, 0.587, 0.114));
-    float isEdge = clamp(abs(lumaC - lumaB) * 10.0, 0.0, 1.0);
-    float blend  = blockStr * (1.0 - isEdge) * 0.35;
-    col = mix(col, bCol, blend);
-
-    // Artifacts de quantification: banding subtil dans les dégradés
-    float band = floor(lumaC * mix(8.0, 32.0, u_jpegQuality / 100.0)) / mix(8.0, 32.0, u_jpegQuality / 100.0);
-    col = mix(col, vec3(band) + (col - vec3(lumaC)), blockStr * 0.15);
-  }
-
-  // ── STEP 4: CHROMA SUBSAMPLING 4:2:0 ─────────────────────────────────────
-  // C'est LA caractéristique des digicams et VHS numériques
-  // La chroma est échantillonnée 2x moins souvent que la luma
-  // Résultat: les bords de couleur "bavent" de 2 pixels horizontalement ET verticalement
-  if (u_chromaSub > 0.005) {
-    // Blocs de chroma 2x2
-    vec2 cBlockSize = vec2(2.0, 2.0) / u_resolution;
-    vec2 cUV = (floor(uv / cBlockSize) + 0.5) * cBlockSize;
-
-    vec3 origYIQ  = rgb2yiq(col);
-    vec3 chromaRef = rgb2yiq(sampleTex(cUV));
-
-    // Blur supplémentaire horizontal de la chroma (effet naturel)
-    vec3 chromaL = rgb2yiq(sampleTex(clamp(cUV - vec2(px.x * 2.0, 0.0), 0.001, 0.999)));
-    vec3 chromaR = rgb2yiq(sampleTex(clamp(cUV + vec2(px.x * 2.0, 0.0), 0.001, 0.999)));
-    float avgI = (chromaRef.y + chromaL.y + chromaR.y) / 3.0;
-    float avgQ = (chromaRef.z + chromaL.z + chromaR.z) / 3.0;
-
-    // Garder la luma originale, remplacer la chroma par la version subsamplée
-    vec3 newYIQ = vec3(origYIQ.x, mix(origYIQ.y, avgI, u_chromaSub), mix(origYIQ.z, avgQ, u_chromaSub));
-    col = yiq2rgb(newYIQ);
-  }
-
-  // ── STEP 5: RINGING / OVERSHOOT ───────────────────────────────────────────
-  // L'artefact le plus caractéristique des digicams cheapo:
-  // bord blanc lumineux sur le côté gauche des contrastes forts
-  // bord sombre sur le côté droit
-  // C'est l'overshoot de l'amplificateur de signal
-  if (u_ringing > 0.005) {
-    float rw = u_ringingWidth * px.x;
-    vec3 colL = sampleTex(clamp(uv - vec2(rw, 0.0), 0.001, 0.999));
-    vec3 colR = sampleTex(clamp(uv + vec2(rw, 0.0), 0.001, 0.999));
-    // Unsharp mask = ringing
-    vec3 unsharp = col - (colL + colR) * 0.5;
-    col += unsharp * u_ringing;
-  }
-
-  // ── STEP 6: COLOR CAST ────────────────────────────────────────────────────
-  col *= u_colorCast;
-
-  // ── STEP 7: YIQ ANALOG SIGNAL ─────────────────────────────────────────────
-  // Chroma shift et bandwidth limiting en espace YIQ
-
-  // Chroma shift latéral
-  float cs = u_chromaShift * px.x;
-  col.r = sampleTex(clamp(uv - vec2(cs * 0.6, 0.0), 0.001, 0.999)).r;
-  col.b = sampleTex(clamp(uv + vec2(cs * 0.4, 0.0), 0.001, 0.999)).b;
-
+  // ── 1C. YIQ BANDWIDTH LIMITING ──────────────────────────────────────────
   vec3 yiq = rgb2yiq(col);
 
-  // Luma blur (bande passante limitée)
-  vec3 yL  = rgb2yiq(sampleTex(clamp(uv - vec2(px.x,        0.0), 0.001, 0.999)));
-  vec3 yR  = rgb2yiq(sampleTex(clamp(uv + vec2(px.x,        0.0), 0.001, 0.999)));
-  vec3 yL2 = rgb2yiq(sampleTex(clamp(uv - vec2(px.x * 2.0, 0.0), 0.001, 0.999)));
-  vec3 yR2 = rgb2yiq(sampleTex(clamp(uv + vec2(px.x * 2.0, 0.0), 0.001, 0.999)));
-  yiq.x = mix(yiq.x, (yL.x  + yR.x)  * 0.5, 1.0 - u_lumaSmear);
-  yiq.y = mix(yiq.y, (yL2.y + yR2.y) * 0.5, u_chromaSmearI);
-  yiq.z = mix(yiq.z, (yL2.z + yR2.z) * 0.5, u_chromaSmearQ);
+  // Luma: blur horizontal (simule ~3MHz de bande passante VHS SP)
+  vec3 yL  = rgb2yiq(sampleAt(uv - vec2(px.x,        0.0)));
+  vec3 yR  = rgb2yiq(sampleAt(uv + vec2(px.x,        0.0)));
+  vec3 yL2 = rgb2yiq(sampleAt(uv - vec2(px.x * 2.0, 0.0)));
+  vec3 yR2 = rgb2yiq(sampleAt(uv + vec2(px.x * 2.0, 0.0)));
+  vec3 yL3 = rgb2yiq(sampleAt(uv - vec2(px.x * 3.0, 0.0)));
+  vec3 yR3 = rgb2yiq(sampleAt(uv + vec2(px.x * 3.0, 0.0)));
 
-  // Vertical bleed
+  // Luma bandwidth: moyenne pondérée (gaussienne approx)
+  yiq.x = mix(yiq.x,
+    (yL.x * 0.3 + yiq.x * 0.4 + yR.x * 0.3),
+    1.0 - u_lumaSmear);
+
+  // Chroma I (orange-cyan): ~500kHz VHS → très étalé horizontalement
+  yiq.y = mix(yiq.y,
+    (yL2.y * 0.25 + yL.y * 0.25 + yiq.y * 0.1 + yR.y * 0.25 + yR2.y * 0.15),
+    u_chromaI);
+
+  // Chroma Q (vert-magenta): encore plus étroit que I
+  yiq.z = mix(yiq.z,
+    (yL3.z * 0.15 + yL2.z * 0.2 + yL.z * 0.2 + yiq.z * 0.1 + yR.z * 0.2 + yR2.z * 0.15),
+    u_chromaQ);
+
+  // Vertical luma bleed
   if (u_lumaVertBleed > 0.001) {
-    vec3 yUp = rgb2yiq(sampleTex(clamp(uv - vec2(0.0, px.y), 0.001, 0.999)));
-    yiq.x = mix(yiq.x, (yiq.x + yUp.x) * 0.5, u_lumaVertBleed);
+    vec3 yUp   = rgb2yiq(sampleAt(uv - vec2(0.0, px.y)));
+    vec3 yUp2  = rgb2yiq(sampleAt(uv - vec2(0.0, px.y * 2.0)));
+    yiq.x = mix(yiq.x, (yiq.x * 0.5 + yUp.x * 0.35 + yUp2.x * 0.15), u_lumaVertBleed);
   }
+
   col = yiq2rgb(yiq);
 
-  // ── STEP 8: INTERLACING ───────────────────────────────────────────────────
-  // VHS et caméscopes = vidéo entrelacée
-  // Les lignes paires et impaires sont capturées à des instants différents
-  // Sur une image fixe ça donne: lignes alternées légèrement décalées
-  if (u_interlace > 0.001) {
-    float isOdd = mod(floor(v_uv.y * u_resolution.y), 2.0);
-    float interlaceOffset = u_interlace * px.x * 1.5;
+  // ── 1D. COLOR CAST ──────────────────────────────────────────────────────
+  col *= u_colorCast;
 
-    if (isOdd > 0.5) {
-      // Lignes impaires: décalées légèrement à droite + légèrement plus sombres
-      vec3 colShifted = sampleTex(clamp(uv + vec2(interlaceOffset, 0.0), 0.001, 0.999));
-      col = mix(col, colShifted * 0.97, u_interlace * 0.5);
+  // ── 1E. INTERLACING ─────────────────────────────────────────────────────
+  // Lignes paires et impaires capturées à des instants légèrement différents
+  // Sur image fixe: lignes alternées avec léger décalage + luminosité
+  if (u_interlace > 0.001) {
+    bool isOdd = mod(lineY, 2.0) > 0.5;
+    float iOff = u_interlace * px.x * 1.2;
+    if (isOdd) {
+      vec3 shifted = sampleAt(uv + vec2(iOff, 0.0));
+      col = mix(col, shifted * 0.96, u_interlace * 0.45);
     } else {
-      // Lignes paires: légèrement décalées à gauche
-      vec3 colShifted = sampleTex(clamp(uv - vec2(interlaceOffset * 0.5, 0.0), 0.001, 0.999));
-      col = mix(col, colShifted, u_interlace * 0.3);
+      vec3 shifted = sampleAt(uv - vec2(iOff * 0.5, 0.0));
+      col = mix(col, shifted, u_interlace * 0.25);
     }
   }
 
-  // ── STEP 9: TAPE NOISE ────────────────────────────────────────────────────
+  // ── 1F. TAPE NOISE ──────────────────────────────────────────────────────
   float luma = dot(col, vec3(0.299, 0.587, 0.114));
-  // Bruit plus fort dans les ombres (caractère CCD/magnétique)
-  float shadowBoost = 1.0 + (1.0 - smoothstep(0.0, 0.45, luma)) * 1.0;
+  // Bruit plus dense dans les ombres (magnétique)
+  float sBoost = 1.0 + (1.0 - smoothstep(0.0, 0.4, luma)) * 1.1;
 
-  float yn = (hash(uv * u_resolution + vec2(fr * 7.3, fr * 3.1)) - 0.5)
-             * u_lumaNoiseAmt * shadowBoost;
-  float cn = (hash(uv.yx * u_resolution + vec2(fr * 5.1, fr * 8.7)) - 0.5)
-             * u_chromaNoiseAmt * shadowBoost;
+  float yn = (hash(uv * u_resolution + vec2(fr * 7.3, fr * 3.7)) - 0.5) * u_lumaNoiseAmt * sBoost;
+  float cn = (hash(uv.yx * u_resolution + vec2(fr * 5.1, fr * 9.3)) - 0.5) * u_chromaNoiseAmt * sBoost;
+  col.r += yn + cn * 0.65;
+  col.g += yn - cn * 0.18;
+  col.b += yn + cn * 1.15;
 
-  col.r += yn + cn * 0.7;
-  col.g += yn - cn * 0.15;
-  col.b += yn + cn * 1.2;
+  // ── 1G. HEAD CAP NOISE (insight changelog Heisei v2) ────────────────────
+  // Bandes horizontales denses de bruit juste au-dessus du head switch
+  // Zone: headSwitchHeight → headSwitchHeight * 3
+  if (u_headCapNoise > 0.001) {
+    float capZoneTop = u_headSwitchHeight * 3.0;
+    float capZoneBot = u_headSwitchHeight;
+    if (fromBot > capZoneBot && fromBot < capZoneTop) {
+      float capT    = (fromBot - capZoneBot) / (capZoneTop - capZoneBot);
+      float capFade = 1.0 - capT;
+      float capN    = (hash(vec2(lineY * 3.7, fr * 1.1 + uv.x * 20.0)) - 0.5);
+      col += vec3(capN * u_headCapNoise * capFade * 0.25);
+    }
+  }
 
-  // ── STEP 10: DROPOUTS ────────────────────────────────────────────────────
-  for (float i = 0.0; i < 15.0; i++) {
+  // ── 1H. DROPOUTS ────────────────────────────────────────────────────────
+  for (float i = 0.0; i < 20.0; i++) {
     if (i >= u_dropoutCount) break;
-    float s  = i * 131.1 + floor(fr * 0.5) * 41.7;
-    float dy = hash1(s);
-    float dx = hash1(s + 1.0);
-    float dl = hash1(s + 2.0) * 120.0 / u_resolution.x;
+    float s   = i * 131.1 + floor(fr * 0.45) * 41.7;
+    float dy  = hash1(s);
+    float dx  = hash1(s + 1.0);
+    float dl  = hash1(s + 2.0) * u_dropoutMaxLen / u_resolution.x;
     float dist = abs(v_uv.y - dy) * u_resolution.y;
     if (dist < 1.0 && v_uv.x > dx && v_uv.x < dx + dl) {
-      float b = u_dropoutIntensity * (1.0 - dist * 0.7);
-      col = mix(col, vec3(0.9 + hash(v_uv * 300.0 + fr) * 0.1), b);
+      float b = u_dropoutIntensity * (1.0 - dist * 0.75);
+      col = mix(col, vec3(0.88 + hash(v_uv * 250.0 + fr) * 0.12), b);
     }
   }
 
-  // ── STEP 11: LEVELS (brutal, pas de gamma smooth) ─────────────────────────
-  // VHS et digicam ont des courbes de contraste dures, pas des S-curves douces
-  float blackF = u_blackCrush / 255.0;
-  float whiteC = u_whiteCrush / 255.0;
-  col = (col - blackF) / (whiteC - blackF);
-
-  // ── STEP 12: SCANLINES + VIGNETTE ─────────────────────────────────────────
-  float scan = mod(v_uv.y * u_resolution.y, 2.0) < 1.0 ? u_scanlineIntensity : 1.0;
+  // ── 1I. SCANLINES CRT ───────────────────────────────────────────────────
+  float scan = mod(lineY, 2.0) < 1.0 ? u_scanlineIntensity : 1.0;
   col *= scan;
 
+  // ════════════════════════════════════════════════════════
+  // PASS 2 — INTERNET 90s RECOMPRESSION
+  // (appliqué sur le signal VHS déjà dégradé)
+  // ════════════════════════════════════════════════════════
+
+  // ── 2A. QUANTIZE COLOR DEPTH (Heisei v3 feature) ────────────────────────
+  // Réduction de la profondeur de couleur: simule 5-6 bits par canal
+  // Donne ce banding caractéristique des vidéos 90s recompressées
+  if (u_colorDepth > 0.001) {
+    // steps: 256 (8bit) → 8 (3bit) selon le slider
+    float steps = mix(256.0, 8.0, u_colorDepth);
+    col = floor(col * steps + 0.5) / steps;
+  }
+
+  // ── 2B. JPEG DCT BLOCK ARTIFACTS ────────────────────────────────────────
+  // Appliqué APRÈS la dégradation VHS → les blocs apparaissent sur signal dégradé
+  // C'est ce double-pass qui crée le look distinctif de Heisei
+  float blockStr = max(0.0, (100.0 - u_jpegQuality) / 100.0);
+  if (blockStr > 0.005) {
+    // Taille de bloc variable (4–16px selon u_jpegBlockSize)
+    float bSize = mix(4.0, 16.0, (u_jpegBlockSize - 4.0) / 12.0);
+    vec2  bRes  = u_resolution / bSize;
+    vec2  bUV   = (floor(v_uv * bRes) + 0.5) / bRes;
+
+    // Sample la version "bloquée" — utilise les UVs ORIGINAUX (pas warpés)
+    // pour simuler que la compression était appliquée à l'image originale
+    vec3 bCol   = texture(u_texture, clamp(bUV, 0.001, 0.999)).rgb;
+
+    // Masque: appliquer davantage dans les zones lisses
+    float lumaC  = dot(col,  vec3(0.299, 0.587, 0.114));
+    float lumaB  = dot(bCol, vec3(0.299, 0.587, 0.114));
+    float isEdge = clamp(abs(lumaC - lumaB) * 8.0, 0.0, 1.0);
+    float blend  = blockStr * (1.0 - isEdge * 0.7) * 0.4;
+    col = mix(col, bCol, blend);
+
+    // Artifact de quantification DCT: légère postérisation
+    float bandSteps = mix(12.0, 64.0, u_jpegQuality / 100.0);
+    vec3 banded = floor(col * bandSteps + 0.5) / bandSteps;
+    col = mix(col, banded, blockStr * 0.3);
+  }
+
+  // ── 2C. RINGING AMPLIFIÉ ────────────────────────────────────────────────
+  // Le ringing est appliqué en PASS 2 (post-compression)
+  // C'est pour ça qu'il a ce côté "amplifié" chez Heisei
+  // Il s'applique sur les blocs JPEG déjà présents, pas sur l'original
+  if (u_ringing > 0.005) {
+    float rw   = u_ringingWidth * px.x;
+    vec3 colL  = sampleAt(clamp(v_uv - vec2(rw,        0.0), 0.001, 0.999));
+    vec3 colR  = sampleAt(clamp(v_uv + vec2(rw,        0.0), 0.001, 0.999));
+    vec3 colL2 = sampleAt(clamp(v_uv - vec2(rw * 2.0, 0.0), 0.001, 0.999));
+    vec3 colR2 = sampleAt(clamp(v_uv + vec2(rw * 2.0, 0.0), 0.001, 0.999));
+    // Double unsharp mask: ringing primaire + secondaire (Gibbs phenomenon)
+    vec3 unsharp1 = col - (colL  + colR)  * 0.5;
+    vec3 unsharp2 = col - (colL2 + colR2) * 0.5;
+    col += unsharp1 * u_ringing + unsharp2 * u_ringing * 0.3;
+  }
+
+  // ── 2D. LEVELS (brutal, pas de gamma smooth) ────────────────────────────
+  float blackF = u_blackCrush / 255.0;
+  float whiteC = u_whiteCrush / 255.0;
+  col = (col - blackF) / max(whiteC - blackF, 0.001);
+
+  // ── 2E. VIGNETTE ────────────────────────────────────────────────────────
   if (u_vignette > 0.001) {
-    vec2 vig = (v_uv - 0.5) * vec2(0.85, 1.1);
-    float v  = pow(clamp(1.0 - dot(vig, vig), 0.0, 1.0), 0.3);
+    vec2 vig = (v_uv - 0.5) * vec2(0.88, 1.15);
+    float v  = pow(clamp(1.0 - dot(vig, vig), 0.0, 1.0), 0.32);
     col *= mix(1.0, v, u_vignette);
   }
 

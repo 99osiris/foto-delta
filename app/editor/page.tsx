@@ -31,7 +31,9 @@ function MobilePresetBar() {
     mode === 'vhs' &&
     vhs.jpegQuality === HI8_PARAMS.jpegQuality &&
     vhs.chromaShift === HI8_PARAMS.chromaShift &&
-    vhs.downscale === HI8_PARAMS.downscale
+    vhs.chromaShiftRandom === HI8_PARAMS.chromaShiftRandom &&
+    vhs.lumaSmear === HI8_PARAMS.lumaSmear &&
+    vhs.colorDepth === HI8_PARAMS.colorDepth
 
   return (
     <div style={{ display: 'flex', gap: 6, padding: '0 12px' }}>

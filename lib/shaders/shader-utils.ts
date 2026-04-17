@@ -3,23 +3,39 @@ export function compileShader(
   type: number,
   src: string
 ): WebGLShader {
-  if (!src || src.trim() === '') {
+  if (!src || typeof src !== 'string' || src.trim().length === 0) {
     throw new Error(
-      'Shader source is empty or undefined. ' +
-      'Check that the .ts shader file exports a default string.'
+      `Shader source is empty or not a string. Got: ${typeof src}. ` +
+      `Check that your .ts shader files export a default string.`
     )
   }
-  const shader = gl.createShader(type)!
+
+  const trimmed = src.trimStart()
+  if (!trimmed.startsWith('#version')) {
+    throw new Error(
+      `Shader does not start with #version directive. ` +
+      `First 50 chars: "${src.slice(0, 50)}". ` +
+      `Make sure there is NO whitespace or BOM before #version 300 es.`
+    )
+  }
+
+  const shader = gl.createShader(type)
+  if (!shader) throw new Error('gl.createShader returned null')
+
   gl.shaderSource(shader, src)
   gl.compileShader(shader)
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    const log  = gl.getShaderInfoLog(shader)
-    const preview = src.slice(0, 120)
+    const log     = gl.getShaderInfoLog(shader) ?? 'no log'
+    const preview = src.slice(0, 200).replace(/\n/g, '↵')
     gl.deleteShader(shader)
     throw new Error(
-      `Shader compile failed.\nLog: ${log}\nSource (first 120 chars): ${preview}`
+      `GLSL compile error (${type === gl.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT'}):\n` +
+      `${log}\n` +
+      `Source preview: ${preview}`
     )
   }
+
   return shader
 }
 
@@ -30,13 +46,20 @@ export function createProgram(
 ): WebGLProgram {
   const vert = compileShader(gl, gl.VERTEX_SHADER,   vertSrc)
   const frag = compileShader(gl, gl.FRAGMENT_SHADER, fragSrc)
-  const program = gl.createProgram()!
+
+  const program = gl.createProgram()
+  if (!program) throw new Error('gl.createProgram returned null')
+
   gl.attachShader(program, vert)
   gl.attachShader(program, frag)
   gl.linkProgram(program)
+
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Program link failed: ${gl.getProgramInfoLog(program)}`)
+    const log = gl.getProgramInfoLog(program) ?? 'no log'
+    gl.deleteProgram(program)
+    throw new Error(`GLSL link error: ${log}`)
   }
+
   gl.deleteShader(vert)
   gl.deleteShader(frag)
   return program

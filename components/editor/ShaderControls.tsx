@@ -102,9 +102,17 @@ export default function ShaderControls() {
   const dS = <K extends keyof typeof digiParams>(k: K) => (v: number) => setDigiParam(k, v as typeof digiParams[K])
 
   return (
-    <div style={{ width: 256, background: bg, borderLeft: border, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0, ...mono }}>
+    <div style={{
+      height: '100%',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      fontFamily: "'Courier New', monospace",
+    }}>
+    <div style={{ width: '100%', maxWidth: 256, margin: '0 auto', background: bg, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0, flex: 1, minHeight: 0, ...mono }}>
 
-      <div style={{ padding: '10px 12px', borderBottom: border }}>
+      <div style={{ padding: '12px 12px 10px', borderBottom: border }}>
         <div style={{ fontSize: 8, letterSpacing: 2, color: dimmer, marginBottom: 8 }}>PRESETS</div>
         <div style={{ display: 'flex', gap: 4 }}>
           {PRESETS.map(p => (
@@ -138,7 +146,7 @@ export default function ShaderControls() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 0' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 80px' }}>
 
         {mode === 'vhs' && (
           <>
@@ -235,6 +243,7 @@ export default function ShaderControls() {
       <div style={{ padding: '10px 12px', borderTop: border, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
         <ExportButton fullWidth />
       </div>
+    </div>
     </div>
   )
 }

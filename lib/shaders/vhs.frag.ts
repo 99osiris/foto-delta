@@ -111,19 +111,20 @@ vec3 applyAnalogLayer(vec3 col, vec2 uv, float frame) {
   vec2 px = 1.0 / u_resolution;
 
   float shift = u_chromaShift * px.x;
-  col.r = texture(u_texture, clamp(uv - vec2(shift * 0.6, 0.0), 0.001, 0.999)).r;
-  col.g = texture(u_texture, clamp(uv, 0.001, 0.999)).g;
-  col.b = texture(u_texture, clamp(uv + vec2(shift * 0.4, 0.0), 0.001, 0.999)).b;
+  float rSample = texture(u_texture, clamp(uv - vec2(shift * 0.6, 0.0), 0.001, 0.999)).r;
+  float bSample = texture(u_texture, clamp(uv + vec2(shift * 0.4, 0.0), 0.001, 0.999)).b;
+  col.r = rSample;
+  col.b = bSample;
 
   vec3 yiq = rgb2yiq(col);
 
   float blurPx = px.x;
-  vec3 yiqL = rgb2yiq(texture(u_texture, clamp(uv - vec2(blurPx, 0.0), 0.001, 0.999)).rgb);
-  vec3 yiqR = rgb2yiq(texture(u_texture, clamp(uv + vec2(blurPx, 0.0), 0.001, 0.999)).rgb);
-  yiq.x = mix(yiq.x, (yiqL.x + yiqR.x) * 0.5, 1.0 - u_lumaBandwidth);
-
+  vec3 yiqL  = rgb2yiq(texture(u_texture, clamp(uv - vec2(blurPx,       0.0), 0.001, 0.999)).rgb);
+  vec3 yiqR  = rgb2yiq(texture(u_texture, clamp(uv + vec2(blurPx,       0.0), 0.001, 0.999)).rgb);
   vec3 yiqL2 = rgb2yiq(texture(u_texture, clamp(uv - vec2(blurPx * 2.0, 0.0), 0.001, 0.999)).rgb);
   vec3 yiqR2 = rgb2yiq(texture(u_texture, clamp(uv + vec2(blurPx * 2.0, 0.0), 0.001, 0.999)).rgb);
+
+  yiq.x = mix(yiq.x, (yiqL.x  + yiqR.x)  * 0.5, 1.0 - u_lumaBandwidth);
   yiq.y = mix(yiq.y, (yiqL2.y + yiqR2.y) * 0.5, u_chromaI);
   yiq.z = mix(yiq.z, (yiqL2.z + yiqR2.z) * 0.5, u_chromaQ);
 

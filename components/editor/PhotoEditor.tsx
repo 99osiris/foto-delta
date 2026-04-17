@@ -3,12 +3,16 @@ import { useEffect, useRef } from 'react'
 import { useEditorStore } from '@/lib/store/editor'
 import { VHSRenderer } from '@/lib/webgl/renderer'
 
-export default function PhotoEditor({ fileUrl }: { fileUrl: string }) {
+interface Props {
+  fileUrl: string
+  zoom?: number
+}
+
+export default function PhotoEditor({ fileUrl, zoom = 100 }: Props) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const rendererRef = useRef<VHSRenderer | null>(null)
-  const stopLoopRef = useRef<(() => void) | null>(null)
-
-  const { mode } = useEditorStore()
+  const stopRef     = useRef<(() => void) | null>(null)
+  const { mode }    = useEditorStore()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -20,8 +24,8 @@ export default function PhotoEditor({ fileUrl }: { fileUrl: string }) {
       return
     }
     return () => {
-      stopLoopRef.current?.()
-      stopLoopRef.current = null
+      stopRef.current?.()
+      stopRef.current = null
       rendererRef.current?.destroy()
       rendererRef.current = null
     }
@@ -38,8 +42,8 @@ export default function PhotoEditor({ fileUrl }: { fileUrl: string }) {
       canvas.width  = img.naturalWidth
       canvas.height = img.naturalHeight
       renderer.loadSource(img)
-      stopLoopRef.current?.()
-      stopLoopRef.current = renderer.startLoop(() =>
+      stopRef.current?.()
+      stopRef.current = renderer.startLoop(() =>
         useEditorStore.getState().activeParams()
       )
     }
@@ -51,11 +55,28 @@ export default function PhotoEditor({ fileUrl }: { fileUrl: string }) {
     rendererRef.current?.setMode(mode)
   }, [mode])
 
+  const scale = zoom / 100
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="max-w-full max-h-[calc(100vh-48px)] object-contain"
-      style={{ imageRendering: 'auto' }}
-    />
+    <div style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          maxWidth: '100%',
+          maxHeight: '100%',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          imageRendering: 'auto',
+          flexShrink: 0,
+        }}
+      />
+    </div>
   )
 }

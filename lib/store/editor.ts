@@ -5,8 +5,29 @@ import {
   DigiParams,
   DEFAULT_VHS_PARAMS,
   DEFAULT_DIGI_PARAMS,
-  HI8_PARAMS,
 } from '../webgl/renderer'
+
+/** Hi8 '98 — tuned from DEFAULT_VHS_PARAMS */
+export const HI8_PARAMS: VHSParams = {
+  ...DEFAULT_VHS_PARAMS,
+  downscale: 0.65,
+  jpegQuality: 62,
+  chromaSub: 0.55,
+  ringing: 1.8,
+  ringingWidth: 1.2,
+  chromaShift: 1.8,
+  lumaSmear: 0.55,
+  chromaSmearI: 0.04,
+  chromaSmearQ: 0.05,
+  interlace: 0.35,
+  jitterAmp: 0.2,
+  headSwitchHeight: 7,
+  lumaNoiseAmt: 0.018,
+  chromaNoiseAmt: 0.009,
+  dropoutCount: 1,
+  scanlineIntensity: 0.88,
+  colorCast: [0.93, 1.02, 1.04] as [number, number, number],
+}
 
 type FileType = 'photo' | 'video' | null
 

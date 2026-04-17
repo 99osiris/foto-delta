@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useEditorStore } from '@/lib/store/editor'
 import { checkUnlocked, setUnlocked } from '@/lib/stripe'
-import { HI8_PARAMS } from '@/lib/webgl/renderer'
+import { HI8_PARAMS } from '@/lib/store/editor'
 import PhotoEditor from '@/components/editor/PhotoEditor'
 import VideoEditor from '@/components/editor/VideoEditor'
 import ShaderControls from '@/components/editor/ShaderControls'
@@ -30,7 +30,7 @@ function MobilePresetBar() {
     mode === 'vhs' &&
     vhs.jpegQuality === HI8_PARAMS.jpegQuality &&
     vhs.chromaShift === HI8_PARAMS.chromaShift &&
-    vhs.lumaBandwidth === HI8_PARAMS.lumaBandwidth
+    vhs.downscale === HI8_PARAMS.downscale
 
   return (
     <div style={{ display: 'flex', gap: 6, padding: '0 12px' }}>

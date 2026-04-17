@@ -7,132 +7,103 @@ import digiFragSrc  from '../shaders/digicam.frag'
 export type FilterMode = 'vhs' | 'digicam'
 
 export interface VHSParams {
+  downscale: number
   jpegQuality: number
-  blackCrush: number
-  whiteCrush: number
-  sharpness: number
-  sharpnessWidth: number
-  colorCast: [number, number, number]
-  lumaBandwidth: number
-  chromaI: number
-  chromaQ: number
-  lumaVertBleed: number
+  chromaSub: number
+  ringing: number
+  ringingWidth: number
   chromaShift: number
+  lumaSmear: number
+  chromaSmearI: number
+  chromaSmearQ: number
+  lumaVertBleed: number
   lumaNoiseAmt: number
   chromaNoiseAmt: number
-  jitterFreq: number
   jitterAmp: number
+  jitterFreq: number
   jitterRoughness: number
   headSwitchHeight: number
   headSwitchAmt: number
-  bottomDistHeight: number
-  bottomDistAmt: number
   dropoutCount: number
-  dropoutMaxLen: number
   dropoutIntensity: number
+  interlace: number
   scanlineIntensity: number
   vignette: number
+  blackCrush: number
+  whiteCrush: number
+  colorCast: [number, number, number]
 }
 
-// VHS SP 1994 — Sony Betamax/VHS, cassette légèrement usée
 export const DEFAULT_VHS_PARAMS: VHSParams = {
-  jpegQuality: 62,
-  blackCrush: 18,
-  whiteCrush: 228,
-  sharpness: 3.5,
-  sharpnessWidth: 2.0,
-  colorCast: [0.93, 1.04, 0.99] as [number, number, number],
-  lumaBandwidth: 0.38,
-  chromaI: 0.06,
-  chromaQ: 0.08,
-  lumaVertBleed: 0.42,
-  chromaShift: 3.5,
-  lumaNoiseAmt: 0.028,
+  downscale: 0.5,
+  jpegQuality: 45,
+  chromaSub: 0.8,
+  ringing: 2.5,
+  ringingWidth: 1.5,
+  chromaShift: 2.5,
+  lumaSmear: 0.35,
+  chromaSmearI: 0.08,
+  chromaSmearQ: 0.10,
+  lumaVertBleed: 0.3,
+  lumaNoiseAmt: 0.03,
   chromaNoiseAmt: 0.015,
-  jitterFreq: 0.06,
-  jitterAmp: 0.7,
-  jitterRoughness: 0.35,
-  headSwitchHeight: 18,
-  headSwitchAmt: 0.04,
-  bottomDistHeight: 32,
-  bottomDistAmt: 0.45,
-  dropoutCount: 3,
-  dropoutMaxLen: 90,
-  dropoutIntensity: 0.75,
-  scanlineIntensity: 0.72,
-  vignette: 0.35,
+  jitterAmp: 0.4,
+  jitterFreq: 0.05,
+  jitterRoughness: 0.3,
+  headSwitchHeight: 12,
+  headSwitchAmt: 0.03,
+  dropoutCount: 2,
+  dropoutIntensity: 0.7,
+  interlace: 0.6,
+  scanlineIntensity: 0.8,
+  vignette: 0.25,
+  blackCrush: 14,
+  whiteCrush: 232,
+  colorCast: [0.95, 1.03, 1.0] as [number, number, number],
 }
 
 export interface DigiParams {
-  bayerNoise: number
-  hotPixels: number
+  downscale: number
+  jpegQuality: number
+  chromaSub: number
+  ringing: number
+  ringingWidth: number
   lensBlur: number
   chromaticAb: number
-  barrelDistortion: number
-  jpegBlock: number
-  jpegChroma: number
-  shadowCompression: number
-  midtoneContrast: number
-  highlightShift: number
+  barrelDist: number
+  bayerNoise: number
+  hotPixels: number
+  quantization: number
   saturation: number
   cyanBoost: number
   shadowCyan: number
   blackLift: number
   colorMatrix: [number, number, number]
+  highlightClip: number
   bloomThreshold: number
-  bloomRadius: number
   bloomIntensity: number
 }
 
-// Digicam 2003–2009 — Sony CyberShot DSC-S50 / DSC-T90
 export const DEFAULT_DIGI_PARAMS: DigiParams = {
-  bayerNoise: 0.055,
-  hotPixels: 0.35,
-  lensBlur: 0.52,
-  chromaticAb: 2.8,
-  barrelDistortion: 0.07,
-  jpegBlock: 0.38,
-  jpegChroma: 0.55,
-  shadowCompression: 0.65,
-  midtoneContrast: 0.82,
-  highlightShift: 0.65,
-  saturation: 0.58,
-  cyanBoost: 1.55,
-  shadowCyan: 0.055,
-  blackLift: 0.045,
-  colorMatrix: [0.84, 1.0, 1.2] as [number, number, number],
-  bloomThreshold: 0.8,
-  bloomRadius: 0.65,
-  bloomIntensity: 0.42,
-}
-
-// Hi8 1998 — Sony Handycam CCD-TRV série
-export const HI8_PARAMS: VHSParams = {
-  jpegQuality: 78,
-  blackCrush: 12,
-  whiteCrush: 235,
-  sharpness: 2.2,
-  sharpnessWidth: 1.5,
-  colorCast: [0.94, 1.02, 1.04] as [number, number, number],
-  lumaBandwidth: 0.58,
-  chromaI: 0.04,
-  chromaQ: 0.05,
-  lumaVertBleed: 0.28,
-  chromaShift: 2.0,
-  lumaNoiseAmt: 0.018,
-  chromaNoiseAmt: 0.009,
-  jitterFreq: 0.04,
-  jitterAmp: 0.3,
-  jitterRoughness: 0.25,
-  headSwitchHeight: 8,
-  headSwitchAmt: 0.02,
-  bottomDistHeight: 16,
-  bottomDistAmt: 0.22,
-  dropoutCount: 1,
-  dropoutMaxLen: 60,
-  dropoutIntensity: 0.65,
-  scanlineIntensity: 0.85,
-  vignette: 0.22,
+  downscale: 0.6,
+  jpegQuality: 40,
+  chromaSub: 0.9,
+  ringing: 1.8,
+  ringingWidth: 1.2,
+  lensBlur: 0.4,
+  chromaticAb: 2.2,
+  barrelDist: 0.06,
+  bayerNoise: 0.045,
+  hotPixels: 0.25,
+  quantization: 0.35,
+  saturation: 0.7,
+  cyanBoost: 1.35,
+  shadowCyan: 0.04,
+  blackLift: 0.04,
+  colorMatrix: [0.86, 1.0, 1.16] as [number, number, number],
+  highlightClip: 0.88,
+  bloomThreshold: 0.80,
+  bloomIntensity: 0.35,
 }
 
 export class VHSRenderer {
@@ -232,54 +203,55 @@ export class VHSRenderer {
       const p = params as VHSParams
       setUniforms(gl, this.activeProgram, {
         ...base,
-        u_jpegQuality:      p.jpegQuality,
-        u_blackCrush:       p.blackCrush,
-        u_whiteCrush:       p.whiteCrush,
-        u_sharpness:        p.sharpness,
-        u_sharpnessWidth:   p.sharpnessWidth,
-        u_colorCast:        p.colorCast,
-        u_lumaBandwidth:    p.lumaBandwidth,
-        u_chromaI:          p.chromaI,
-        u_chromaQ:          p.chromaQ,
-        u_lumaVertBleed:    p.lumaVertBleed,
-        u_chromaShift:      p.chromaShift,
-        u_lumaNoiseAmt:     p.lumaNoiseAmt,
-        u_chromaNoiseAmt:   p.chromaNoiseAmt,
-        u_jitterFreq:       p.jitterFreq,
-        u_jitterAmp:        p.jitterAmp,
-        u_jitterRoughness:  p.jitterRoughness,
-        u_headSwitchHeight: p.headSwitchHeight,
-        u_headSwitchAmt:    p.headSwitchAmt,
-        u_bottomDistHeight: p.bottomDistHeight,
-        u_bottomDistAmt:    p.bottomDistAmt,
-        u_dropoutCount:     p.dropoutCount,
-        u_dropoutMaxLen:    p.dropoutMaxLen,
-        u_dropoutIntensity: p.dropoutIntensity,
+        u_downscale:         p.downscale,
+        u_jpegQuality:       p.jpegQuality,
+        u_chromaSub:         p.chromaSub,
+        u_ringing:           p.ringing,
+        u_ringingWidth:      p.ringingWidth,
+        u_chromaShift:       p.chromaShift,
+        u_lumaSmear:         p.lumaSmear,
+        u_chromaSmearI:      p.chromaSmearI,
+        u_chromaSmearQ:      p.chromaSmearQ,
+        u_lumaVertBleed:     p.lumaVertBleed,
+        u_lumaNoiseAmt:      p.lumaNoiseAmt,
+        u_chromaNoiseAmt:    p.chromaNoiseAmt,
+        u_jitterAmp:         p.jitterAmp,
+        u_jitterFreq:        p.jitterFreq,
+        u_jitterRoughness:   p.jitterRoughness,
+        u_headSwitchHeight:  p.headSwitchHeight,
+        u_headSwitchAmt:     p.headSwitchAmt,
+        u_dropoutCount:      p.dropoutCount,
+        u_dropoutIntensity:  p.dropoutIntensity,
+        u_interlace:         p.interlace,
         u_scanlineIntensity: p.scanlineIntensity,
         u_vignette:          p.vignette,
+        u_blackCrush:        p.blackCrush,
+        u_whiteCrush:        p.whiteCrush,
+        u_colorCast:         p.colorCast,
       })
     } else {
       const p = params as DigiParams
       setUniforms(gl, this.activeProgram, {
         ...base,
-        u_bayerNoise:        p.bayerNoise,
-        u_hotPixels:         p.hotPixels,
-        u_lensBlur:          p.lensBlur,
-        u_chromaticAb:       p.chromaticAb,
-        u_barrelDistortion:  p.barrelDistortion,
-        u_jpegBlock:         p.jpegBlock,
-        u_jpegChroma:        p.jpegChroma,
-        u_shadowCompression: p.shadowCompression,
-        u_midtoneContrast:   p.midtoneContrast,
-        u_highlightShift:    p.highlightShift,
-        u_saturation:        p.saturation,
-        u_cyanBoost:         p.cyanBoost,
-        u_shadowCyan:        p.shadowCyan,
-        u_blackLift:         p.blackLift,
-        u_colorMatrix:       p.colorMatrix,
-        u_bloomThreshold:    p.bloomThreshold,
-        u_bloomRadius:       p.bloomRadius,
-        u_bloomIntensity:    p.bloomIntensity,
+        u_downscale:       p.downscale,
+        u_jpegQuality:     p.jpegQuality,
+        u_chromaSub:       p.chromaSub,
+        u_ringing:         p.ringing,
+        u_ringingWidth:    p.ringingWidth,
+        u_lensBlur:        p.lensBlur,
+        u_chromaticAb:     p.chromaticAb,
+        u_barrelDist:      p.barrelDist,
+        u_bayerNoise:      p.bayerNoise,
+        u_hotPixels:       p.hotPixels,
+        u_quantization:    p.quantization,
+        u_saturation:      p.saturation,
+        u_cyanBoost:       p.cyanBoost,
+        u_shadowCyan:      p.shadowCyan,
+        u_blackLift:       p.blackLift,
+        u_colorMatrix:     p.colorMatrix,
+        u_highlightClip:   p.highlightClip,
+        u_bloomThreshold:  p.bloomThreshold,
+        u_bloomIntensity:  p.bloomIntensity,
       })
     }
 

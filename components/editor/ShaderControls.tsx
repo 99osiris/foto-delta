@@ -68,28 +68,32 @@ function applyIntensity(store: ReturnType<typeof useEditorStore.getState>, level
 
   if (mode === 'vhs') {
     const base = DEFAULT_VHS_PARAMS
-    store.setVhsParam('chromaShift',       Math.min(12,   base.chromaShift       * mul))
-    store.setVhsParam('jitterAmp',         Math.min(5,    base.jitterAmp         * mul))
-    store.setVhsParam('lumaNoiseAmt',      Math.min(0.15, base.lumaNoiseAmt      * mul))
-    store.setVhsParam('chromaNoiseAmt',    Math.min(0.10, base.chromaNoiseAmt    * mul))
-    store.setVhsParam('dropoutCount',      Math.min(20,   Math.round(base.dropoutCount * mul)))
-    store.setVhsParam('headSwitchHeight',  Math.min(60,   base.headSwitchHeight  * mul))
-    store.setVhsParam('bottomDistAmt',     Math.min(1.0,  base.bottomDistAmt     * mul))
-    store.setVhsParam('chromaI',           Math.min(0.2,  base.chromaI           * mul))
-    store.setVhsParam('chromaQ',           Math.min(0.2,  base.chromaQ           * mul))
+    store.setVhsParam('chromaShift',       Math.min(8,    base.chromaShift       * mul))
+    store.setVhsParam('jitterAmp',         Math.min(4,    base.jitterAmp         * mul))
+    store.setVhsParam('lumaNoiseAmt',      Math.min(0.12, base.lumaNoiseAmt     * mul))
+    store.setVhsParam('chromaNoiseAmt',    Math.min(0.08, base.chromaNoiseAmt   * mul))
+    store.setVhsParam('dropoutCount',      Math.min(15,   Math.round(base.dropoutCount * mul)))
+    store.setVhsParam('headSwitchHeight',  Math.min(50,   base.headSwitchHeight  * mul))
+    store.setVhsParam('chromaSmearI',      Math.min(0.3,  base.chromaSmearI      * mul))
+    store.setVhsParam('chromaSmearQ',      Math.min(0.3,  base.chromaSmearQ      * mul))
     store.setVhsParam('vignette',          Math.min(1.0,  base.vignette          * mul))
     store.setVhsParam('jpegQuality',       Math.max(0,    100 - (100 - base.jpegQuality) * mul))
     store.setVhsParam('scanlineIntensity', Math.max(0.4,  base.scanlineIntensity - (mul - 1) * 0.08))
+    store.setVhsParam('ringing',           Math.min(5,    base.ringing           * mul))
+    store.setVhsParam('chromaSub',         Math.min(1.0,  base.chromaSub         * mul))
+    store.setVhsParam('downscale',         Math.max(0.15, base.downscale         / mul))
   } else {
     const base = DEFAULT_DIGI_PARAMS
-    store.setDigiParam('bayerNoise',     Math.min(0.15, base.bayerNoise      * mul))
-    store.setDigiParam('jpegBlock',      Math.min(1.0,  base.jpegBlock       * mul))
-    store.setDigiParam('jpegChroma',     Math.min(1.0,  base.jpegChroma      * mul))
-    store.setDigiParam('chromaticAb',    Math.min(8.0,  base.chromaticAb     * mul))
-    store.setDigiParam('lensBlur',       Math.min(1.0,  base.lensBlur        * mul))
-    store.setDigiParam('bloomIntensity', Math.min(1.0,  base.bloomIntensity  * mul))
-    store.setDigiParam('shadowCyan',     Math.min(0.15, base.shadowCyan      * mul))
-    store.setDigiParam('hotPixels',      Math.min(1.0,  base.hotPixels       * mul))
+    store.setDigiParam('bayerNoise',      Math.min(0.1,  base.bayerNoise      * mul))
+    store.setDigiParam('jpegQuality',     Math.max(0,    100 - (100 - base.jpegQuality) * mul))
+    store.setDigiParam('chromaSub',       Math.min(1.0,  base.chromaSub       * mul))
+    store.setDigiParam('chromaticAb',     Math.min(6.0,  base.chromaticAb     * mul))
+    store.setDigiParam('lensBlur',        Math.min(1.0,  base.lensBlur        * mul))
+    store.setDigiParam('bloomIntensity',  Math.min(0.8,  base.bloomIntensity  * mul))
+    store.setDigiParam('shadowCyan',      Math.min(0.1,  base.shadowCyan      * mul))
+    store.setDigiParam('hotPixels',       Math.min(1.0,  base.hotPixels       * mul))
+    store.setDigiParam('ringing',         Math.min(4.0,  base.ringing         * mul))
+    store.setDigiParam('quantization',    Math.min(1.0,  base.quantization    * mul))
   }
 }
 
@@ -175,39 +179,39 @@ export default function ShaderControls({ hidePanelPresets = false }: { hidePanel
 
         {mode === 'vhs' && (
           <>
-            <SectionLabel>JPEG — DEGRADATION</SectionLabel>
+            <SectionLabel>MEDIA DEGRADATION</SectionLabel>
+            <Slider label="Native resolution (downscale)" value={vhsParams.downscale} min={0} max={1} step={0.01} onChange={vS('downscale')} />
             <Slider label="JPEG quality" value={vhsParams.jpegQuality} min={0} max={100} step={1} decimals={0} onChange={vS('jpegQuality')} />
-            <Slider label="Black crush" value={vhsParams.blackCrush} min={0} max={32} step={1} decimals={0} onChange={vS('blackCrush')} />
-            <Slider label="White crush" value={vhsParams.whiteCrush} min={220} max={255} step={1} decimals={0} onChange={vS('whiteCrush')} />
+            <Slider label="Chroma subsampling" value={vhsParams.chromaSub} min={0} max={1} onChange={vS('chromaSub')} />
+            <Slider label="Ringing" value={vhsParams.ringing} min={0} max={5} step={0.05} onChange={vS('ringing')} />
+            <Slider label="Ringing width" value={vhsParams.ringingWidth} min={0.5} max={4} step={0.05} onChange={vS('ringingWidth')} />
 
-            <SectionLabel>SIGNAL — ARTIFACTS</SectionLabel>
-            <Slider label="Sharpness" value={vhsParams.sharpness} min={0} max={8} step={0.1} onChange={vS('sharpness')} />
-            <Slider label="Sharpness width" value={vhsParams.sharpnessWidth} min={0} max={4} step={0.1} onChange={vS('sharpnessWidth')} />
+            <SectionLabel>SIGNAL</SectionLabel>
+            <Slider label="Chroma shift" value={vhsParams.chromaShift} min={0} max={8} step={0.05} onChange={vS('chromaShift')} />
+            <Slider label="Luma smear" value={vhsParams.lumaSmear} min={0} max={1} onChange={vS('lumaSmear')} />
+            <Slider label="Chroma smear I" value={vhsParams.chromaSmearI} min={0} max={0.3} step={0.005} onChange={vS('chromaSmearI')} />
+            <Slider label="Chroma smear Q" value={vhsParams.chromaSmearQ} min={0} max={0.3} step={0.005} onChange={vS('chromaSmearQ')} />
+            <Slider label="Vertical bleed" value={vhsParams.lumaVertBleed} min={0} max={0.8} onChange={vS('lumaVertBleed')} />
 
-            <SectionLabel>ANALOG — YIQ</SectionLabel>
-            <Slider label="Chroma shift" value={vhsParams.chromaShift} min={0} max={12} step={0.1} onChange={vS('chromaShift')} />
-            <Slider label="Luma bandwidth" value={vhsParams.lumaBandwidth} min={0.1} max={1} onChange={vS('lumaBandwidth')} />
-            <Slider label="Chroma I bleed" value={vhsParams.chromaI} min={0} max={0.2} onChange={vS('chromaI')} />
-            <Slider label="Chroma Q bleed" value={vhsParams.chromaQ} min={0} max={0.2} onChange={vS('chromaQ')} />
-            <Slider label="Vertical bleed" value={vhsParams.lumaVertBleed} min={0} max={1} onChange={vS('lumaVertBleed')} />
-            <Slider label="Luma noise" value={vhsParams.lumaNoiseAmt} min={0} max={0.15} step={0.005} onChange={vS('lumaNoiseAmt')} />
-            <Slider label="Chroma noise" value={vhsParams.chromaNoiseAmt} min={0} max={0.10} step={0.002} onChange={vS('chromaNoiseAmt')} />
-
-            <SectionLabel>MECHANICAL — TAPE</SectionLabel>
-            <Slider label="Jitter frequency" value={vhsParams.jitterFreq} min={0} max={0.3} step={0.005} onChange={vS('jitterFreq')} />
-            <Slider label="Jitter amplitude" value={vhsParams.jitterAmp} min={0} max={5} step={0.1} onChange={vS('jitterAmp')} />
-            <Slider label="Jitter roughness" value={vhsParams.jitterRoughness} min={0} max={1} onChange={vS('jitterRoughness')} />
-            <Slider label="Head switch height" value={vhsParams.headSwitchHeight} min={0} max={60} step={1} decimals={0} onChange={vS('headSwitchHeight')} />
-            <Slider label="Head switch amount" value={vhsParams.headSwitchAmt} min={0} max={0.1} step={0.005} onChange={vS('headSwitchAmt')} />
-            <Slider label="Bottom dist height" value={vhsParams.bottomDistHeight} min={0} max={80} step={1} decimals={0} onChange={vS('bottomDistHeight')} />
-            <Slider label="Bottom distortion" value={vhsParams.bottomDistAmt} min={0} max={1} onChange={vS('bottomDistAmt')} />
-            <Slider label="Dropout count" value={vhsParams.dropoutCount} min={0} max={20} step={1} decimals={0} onChange={vS('dropoutCount')} />
-            <Slider label="Dropout max len" value={vhsParams.dropoutMaxLen} min={0} max={300} step={1} decimals={0} onChange={vS('dropoutMaxLen')} />
+            <SectionLabel>NOISE & ARTIFACTS</SectionLabel>
+            <Slider label="Luma noise" value={vhsParams.lumaNoiseAmt} min={0} max={0.12} step={0.002} onChange={vS('lumaNoiseAmt')} />
+            <Slider label="Chroma noise" value={vhsParams.chromaNoiseAmt} min={0} max={0.08} step={0.002} onChange={vS('chromaNoiseAmt')} />
+            <Slider label="Interlacing" value={vhsParams.interlace} min={0} max={1} onChange={vS('interlace')} />
+            <Slider label="Dropout count" value={vhsParams.dropoutCount} min={0} max={15} step={1} decimals={0} onChange={vS('dropoutCount')} />
             <Slider label="Dropout intensity" value={vhsParams.dropoutIntensity} min={0} max={1} onChange={vS('dropoutIntensity')} />
 
+            <SectionLabel>MECHANICAL</SectionLabel>
+            <Slider label="Jitter amplitude" value={vhsParams.jitterAmp} min={0} max={4} step={0.05} onChange={vS('jitterAmp')} />
+            <Slider label="Jitter frequency" value={vhsParams.jitterFreq} min={0} max={0.3} step={0.005} onChange={vS('jitterFreq')} />
+            <Slider label="Jitter roughness" value={vhsParams.jitterRoughness} min={0} max={1} onChange={vS('jitterRoughness')} />
+            <Slider label="Head switch height" value={vhsParams.headSwitchHeight} min={0} max={50} step={1} decimals={0} onChange={vS('headSwitchHeight')} />
+            <Slider label="Head switch amount" value={vhsParams.headSwitchAmt} min={0} max={0.08} step={0.002} onChange={vS('headSwitchAmt')} />
+
             <SectionLabel>DISPLAY</SectionLabel>
-            <Slider label="Scanline intensity" value={vhsParams.scanlineIntensity} min={0} max={1} onChange={vS('scanlineIntensity')} />
+            <Slider label="Scanlines" value={vhsParams.scanlineIntensity} min={0} max={1} onChange={vS('scanlineIntensity')} />
             <Slider label="Vignette" value={vhsParams.vignette} min={0} max={1} onChange={vS('vignette')} />
+            <Slider label="Black crush" value={vhsParams.blackCrush} min={0} max={30} step={1} decimals={0} onChange={vS('blackCrush')} />
+            <Slider label="White crush" value={vhsParams.whiteCrush} min={220} max={255} step={1} decimals={0} onChange={vS('whiteCrush')} />
 
             <SectionLabel>COLOR CAST</SectionLabel>
             <Slider label="Red" value={vhsParams.colorCast[0]} min={0.7} max={1.3} onChange={v => setVhsParam('colorCast', [v, vhsParams.colorCast[1], vhsParams.colorCast[2]])} />
@@ -224,37 +228,36 @@ export default function ShaderControls({ hidePanelPresets = false }: { hidePanel
 
         {mode === 'digicam' && (
           <>
-            <SectionLabel>BAYER — CCD</SectionLabel>
-            <Slider label="Bayer noise" value={digiParams.bayerNoise} min={0} max={0.12} step={0.005} onChange={dS('bayerNoise')} />
-            <Slider label="Hot pixels" value={digiParams.hotPixels} min={0} max={1} onChange={dS('hotPixels')} />
+            <SectionLabel>MEDIA DEGRADATION</SectionLabel>
+            <Slider label="Native resolution (downscale)" value={digiParams.downscale} min={0} max={1} step={0.01} onChange={dS('downscale')} />
+            <Slider label="JPEG quality" value={digiParams.jpegQuality} min={0} max={100} step={1} decimals={0} onChange={dS('jpegQuality')} />
+            <Slider label="Chroma subsampling" value={digiParams.chromaSub} min={0} max={1} onChange={dS('chromaSub')} />
+            <Slider label="Ringing" value={digiParams.ringing} min={0} max={4} step={0.05} onChange={dS('ringing')} />
+            <Slider label="Ringing width" value={digiParams.ringingWidth} min={0.5} max={3} step={0.05} onChange={dS('ringingWidth')} />
+            <Slider label="Quantization banding" value={digiParams.quantization} min={0} max={1} onChange={dS('quantization')} />
 
-            <SectionLabel>LENS — OPTICS</SectionLabel>
+            <SectionLabel>LENS</SectionLabel>
             <Slider label="Lens blur" value={digiParams.lensBlur} min={0} max={1} step={0.02} onChange={dS('lensBlur')} />
-            <Slider label="Chromatic aberration" value={digiParams.chromaticAb} min={0} max={8} step={0.1} onChange={dS('chromaticAb')} />
-            <Slider label="Barrel distortion" value={digiParams.barrelDistortion} min={0} max={0.3} step={0.01} onChange={dS('barrelDistortion')} />
+            <Slider label="Chromatic aberration" value={digiParams.chromaticAb} min={0} max={6} step={0.1} onChange={dS('chromaticAb')} />
+            <Slider label="Barrel distortion" value={digiParams.barrelDist} min={0} max={0.2} step={0.005} onChange={dS('barrelDist')} />
 
-            <SectionLabel>JPEG</SectionLabel>
-            <Slider label="JPEG blocks" value={digiParams.jpegBlock} min={0} max={1} onChange={dS('jpegBlock')} />
-            <Slider label="Chroma subsampling" value={digiParams.jpegChroma} min={0} max={1} onChange={dS('jpegChroma')} />
-
-            <SectionLabel>SENSOR — CURVE</SectionLabel>
-            <Slider label="Shadow compression" value={digiParams.shadowCompression} min={0} max={1} onChange={dS('shadowCompression')} />
-            <Slider label="Midtone contrast" value={digiParams.midtoneContrast} min={0.5} max={1.5} step={0.01} onChange={dS('midtoneContrast')} />
-            <Slider label="Highlight shift" value={digiParams.highlightShift} min={0} max={1} onChange={dS('highlightShift')} />
+            <SectionLabel>SENSOR</SectionLabel>
+            <Slider label="Bayer noise" value={digiParams.bayerNoise} min={0} max={0.1} step={0.002} onChange={dS('bayerNoise')} />
+            <Slider label="Hot pixels" value={digiParams.hotPixels} min={0} max={1} onChange={dS('hotPixels')} />
 
             <SectionLabel>COLOR SCIENCE</SectionLabel>
             <Slider label="Saturation" value={digiParams.saturation} min={0.3} max={1.2} onChange={dS('saturation')} />
-            <Slider label="Cyan boost" value={digiParams.cyanBoost} min={1.0} max={2.5} step={0.05} onChange={dS('cyanBoost')} />
-            <Slider label="Shadow cyan tint" value={digiParams.shadowCyan} min={0} max={0.15} step={0.005} onChange={dS('shadowCyan')} />
-            <Slider label="Black lift" value={digiParams.blackLift} min={0} max={0.12} step={0.005} onChange={dS('blackLift')} />
+            <Slider label="Cyan boost" value={digiParams.cyanBoost} min={1.0} max={2.0} step={0.02} onChange={dS('cyanBoost')} />
+            <Slider label="Shadow cyan" value={digiParams.shadowCyan} min={0} max={0.1} step={0.002} onChange={dS('shadowCyan')} />
+            <Slider label="Highlight clip" value={digiParams.highlightClip} min={0.7} max={1.0} step={0.01} onChange={dS('highlightClip')} />
+            <Slider label="Black lift" value={digiParams.blackLift} min={0} max={0.1} step={0.002} onChange={dS('blackLift')} />
             <Slider label="Red" value={digiParams.colorMatrix[0]} min={0.7} max={1.3} onChange={v => setDigiParam('colorMatrix', [v, digiParams.colorMatrix[1], digiParams.colorMatrix[2]])} />
             <Slider label="Green" value={digiParams.colorMatrix[1]} min={0.7} max={1.3} onChange={v => setDigiParam('colorMatrix', [digiParams.colorMatrix[0], v, digiParams.colorMatrix[2]])} />
             <Slider label="Blue" value={digiParams.colorMatrix[2]} min={0.7} max={1.3} onChange={v => setDigiParam('colorMatrix', [digiParams.colorMatrix[0], digiParams.colorMatrix[1], v])} />
 
-            <SectionLabel>HIGHLIGHT — BLOOM</SectionLabel>
+            <SectionLabel>BLOOM</SectionLabel>
             <Slider label="Bloom threshold" value={digiParams.bloomThreshold} min={0.6} max={1.0} step={0.01} onChange={dS('bloomThreshold')} />
-            <Slider label="Bloom radius" value={digiParams.bloomRadius} min={0} max={1} onChange={dS('bloomRadius')} />
-            <Slider label="Bloom intensity" value={digiParams.bloomIntensity} min={0} max={1} onChange={dS('bloomIntensity')} />
+            <Slider label="Bloom intensity" value={digiParams.bloomIntensity} min={0} max={0.8} step={0.01} onChange={dS('bloomIntensity')} />
 
             <div style={{ paddingTop: 8, paddingBottom: 16 }}>
               <button type="button" onClick={() => store.resetDigiParams()} style={{ width: '100%', padding: '6px 0', fontSize: 9, letterSpacing: 1, border: '1px solid #1e1e1e', borderRadius: 2, color: '#444', background: 'transparent', cursor: 'pointer', ...mono }}>

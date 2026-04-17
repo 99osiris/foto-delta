@@ -28,6 +28,16 @@ uniform float u_dropoutIntensity;  // 0–1    défaut 0.78  — intensité drop
 uniform float u_interlace;         // 0–1    défaut 0.55  — entrelacement lignes paires/impaires
 uniform float u_scanlineIntensity; // 0–1    défaut 0.76  — scanlines CRT
 
+// TAPE CREASE (LazarusOverlook CC0)
+uniform float u_tapeCreaseAmt;      // 0.0-1.0 défaut 0.35 — intensité des plis cassette
+uniform float u_tapeCreaseSpeed;  // 0.1-2.0 défaut 0.5  — vitesse déplacement pli
+uniform float u_tapeCreaseJitter;   // 0.0-1.0 défaut 0.15 — irrégularité du pli
+uniform float u_tapeCreaseDiscolor; // 0.0-2.0 défaut 0.8  — discoloration YIQ au pli
+uniform float u_tapeCreaseSmear;    // 0.0-2.0 défaut 0.3  — smear horizontal au pli
+// AC BEAT (LazarusOverlook CC0)
+uniform float u_acBeatAmt;          // 0.0-0.5 défaut 0.08 — intensité bande lumineuse
+uniform float u_acBeatSpeed;        // 0.0-1.0 défaut 0.15 — vitesse montée bande
+
 // PASS 2 — INTERNET 90s RECOMPRESSION
 uniform float u_jpegQuality;       // 0–100  défaut 58    — qualité JPEG (lower = plus d'artefacts)
 uniform float u_jpegBlockSize;     // 4–16   défaut 8     — taille blocs DCT (8 = standard JPEG)
@@ -76,6 +86,13 @@ vec3 yiq2rgb(vec3 y) {
   );
 }
 
+// Rotation 2D pour la discoloration chroma au tape crease (LazarusOverlook CC0)
+mat2 rotate2D(float t) {
+  float c = cos(t);
+  float s = sin(t);
+  return mat2(vec2(c, s), vec2(-s, c));
+}
+
 vec3 sampleAt(vec2 uv) {
   return texture(u_texture, clamp(uv, 0.001, 0.999)).rgb;
 }
@@ -116,55 +133,86 @@ void main() {
 
   uv = clamp(uv, 0.001, 0.999);
 
-  // ── 1B. RANDOM Y/C SHIFT (insight clé du changelog Heisei v2) ────────────
-  // Le décalage chroma N'EST PAS uniforme — il varie aléatoirement par ligne
-  // C'est ce qui donne ce côté "vivant" au lieu d'un simple offset uniforme
-  float lineHash  = hash(vec2(lineY, fr * 0.2));
-  float randShift = mix(1.0, lineHash * 2.0, u_chromaShiftRandom);
-  float cs        = u_chromaShift * randShift * px.x;
+  // ── 1B. CHROMA SHIFT — split Y/C propre (technique ROT-7 CC0, adapté) ───
+  // Shifter seulement la chroma (axes I et Q), pas la luma
+  float lineHash   = hash(vec2(lineY, fr * 0.2));
+  float randShift  = mix(1.0, lineHash * 2.0, u_chromaShiftRandom);
+  float cs         = u_chromaShift * randShift * px.x;
 
-  vec3 col;
-  col.r = sampleAt(uv - vec2(cs * 0.65, 0.0)).r;
-  col.g = sampleAt(uv).g;
-  col.b = sampleAt(uv + vec2(cs * 0.35, 0.0)).b;
+  vec3 colBase     = sampleAt(uv);
+  vec3 colShifted  = sampleAt(uv + vec2(cs, 0.0));
 
-  // ── 1C. YIQ BANDWIDTH LIMITING ──────────────────────────────────────────
+  vec3 yiqBase    = rgb2yiq(colBase);
+  vec3 yiqShifted = rgb2yiq(colShifted);
+  vec3 yiqMixed   = vec3(yiqBase.x, yiqShifted.yz);
+  vec3 col        = yiq2rgb(yiqMixed);
+
+  col.r = mix(col.r, sampleAt(uv - vec2(cs * 0.4, 0.0)).r, 0.4);
+  col.b = mix(col.b, sampleAt(uv + vec2(cs * 0.25, 0.0)).b, 0.4);
+
+  // ── 1C. YIQ BANDWIDTH — multi-sample pondéré (LazarusOverlook CC0) ─
   vec3 yiq = rgb2yiq(col);
 
-  // Luma: blur horizontal (simule ~3MHz de bande passante VHS SP)
-  vec3 yL  = rgb2yiq(sampleAt(uv - vec2(px.x,        0.0)));
-  vec3 yR  = rgb2yiq(sampleAt(uv + vec2(px.x,        0.0)));
-  vec3 yL2 = rgb2yiq(sampleAt(uv - vec2(px.x * 2.0, 0.0)));
-  vec3 yR2 = rgb2yiq(sampleAt(uv + vec2(px.x * 2.0, 0.0)));
-  vec3 yL3 = rgb2yiq(sampleAt(uv - vec2(px.x * 3.0, 0.0)));
-  vec3 yR3 = rgb2yiq(sampleAt(uv + vec2(px.x * 3.0, 0.0)));
+  vec3 yiq_L1 = rgb2yiq(sampleAt(uv - vec2(px.x,        0.0)));
+  vec3 yiq_R1 = rgb2yiq(sampleAt(uv + vec2(px.x,        0.0)));
+  vec3 yiq_L2 = rgb2yiq(sampleAt(uv - vec2(px.x * 2.0, 0.0)));
+  vec3 yiq_R2 = rgb2yiq(sampleAt(uv + vec2(px.x * 2.0, 0.0)));
 
-  // Luma bandwidth: moyenne pondérée (gaussienne approx)
-  yiq.x = mix(yiq.x,
-    (yL.x * 0.3 + yiq.x * 0.4 + yR.x * 0.3),
-    1.0 - u_lumaSmear);
+  float lumaBlurred = yiq_L2.x * 0.15 + yiq_L1.x * 0.35
+                    + yiq_R1.x * 0.35 + yiq_R2.x * 0.15;
+  yiq.x = mix(yiq.x, lumaBlurred, 1.0 - u_lumaSmear);
 
-  // Chroma I (orange-cyan): ~500kHz VHS → très étalé horizontalement
-  yiq.y = mix(yiq.y,
-    (yL2.y * 0.25 + yL.y * 0.25 + yiq.y * 0.1 + yR.y * 0.25 + yR2.y * 0.15),
-    u_chromaI);
+  vec3 yiq_L3 = rgb2yiq(sampleAt(uv - vec2(px.x * 3.0, 0.0)));
+  vec3 yiq_R3 = rgb2yiq(sampleAt(uv + vec2(px.x * 3.0, 0.0)));
 
-  // Chroma Q (vert-magenta): encore plus étroit que I
-  yiq.z = mix(yiq.z,
-    (yL3.z * 0.15 + yL2.z * 0.2 + yL.z * 0.2 + yiq.z * 0.1 + yR.z * 0.2 + yR2.z * 0.15),
-    u_chromaQ);
+  float chromaI_blur = yiq_L3.y * 0.2 + yiq_L2.y * 0.25 + yiq_L1.y * 0.1
+                     + yiq_R1.y * 0.1 + yiq_R2.y * 0.25 + yiq_R3.y * 0.2;
+  yiq.y = mix(yiq.y, chromaI_blur / 1.1, u_chromaI);
 
-  // Vertical luma bleed
+  float chromaQ_blur = yiq_L3.z * 0.25 + yiq_L2.z * 0.25 + yiq_L1.z * 0.1
+                     + yiq_R1.z * 0.1 + yiq_R2.z * 0.25 + yiq_R3.z * 0.25;
+  yiq.z = mix(yiq.z, chromaQ_blur / 1.2, u_chromaQ);
+
   if (u_lumaVertBleed > 0.001) {
-    vec3 yUp   = rgb2yiq(sampleAt(uv - vec2(0.0, px.y)));
-    vec3 yUp2  = rgb2yiq(sampleAt(uv - vec2(0.0, px.y * 2.0)));
-    yiq.x = mix(yiq.x, (yiq.x * 0.5 + yUp.x * 0.35 + yUp2.x * 0.15), u_lumaVertBleed);
+    vec3 yUp  = rgb2yiq(sampleAt(uv - vec2(0.0, px.y)));
+    vec3 yUp2 = rgb2yiq(sampleAt(uv - vec2(0.0, px.y * 2.0)));
+    yiq.x = mix(yiq.x, yiq.x * 0.5 + yUp.x * 0.35 + yUp2.x * 0.15, u_lumaVertBleed);
   }
 
   col = yiq2rgb(yiq);
 
   // ── 1D. COLOR CAST ──────────────────────────────────────────────────────
   col *= u_colorCast;
+
+  // ── 1D-BIS. TAPE CREASE (adapté de LazarusOverlook CC0) ─────────────────
+  if (u_tapeCreaseAmt > 0.001) {
+    float tcPhase = smoothstep(0.9, 0.96,
+      sin(uv.y * 8.0 - (u_time * u_tapeCreaseSpeed
+        + u_tapeCreaseJitter * hash(vec2(u_time * 0.67, u_time * 0.59))) * 3.14159 * 1.2)
+    );
+    float tcNoise = smoothstep(0.3, 1.0, hash(vec2(uv.y * 4.77, fr)));
+    float tc      = tcPhase * tcNoise;
+
+    vec2  creaseUV = uv - vec2(tc * u_tapeCreaseSmear * px.x * 8.0, 0.0);
+    vec3  colCrease = sampleAt(creaseUV);
+
+    if (tc > 0.01) {
+      vec3 yiqCrease = rgb2yiq(colCrease);
+      float rotAngle = tc * u_tapeCreaseDiscolor * 0.2;
+      yiqCrease.yz   = rotate2D(rotAngle) * yiqCrease.yz;
+      colCrease      = yiq2rgb(yiqCrease);
+      col = mix(col, colCrease, tc * u_tapeCreaseAmt);
+    }
+
+    float cn = tcNoise * (0.7 * tcPhase + 0.3) * u_tapeCreaseAmt;
+    if (cn > 0.29) {
+      float n0 = hash(vec2(uv.y + hash(vec2(uv.y, u_time)) * 0.1, u_time) * vec2(0.1, 1.0));
+      float n1 = hash(vec2(uv.y + hash(vec2(uv.y, u_time)) * 0.1 + px.x, u_time) * vec2(0.1, 1.0));
+      if (n1 < n0) {
+        col = mix(col, vec3(pow(n0, 10.0) * 2.0), cn * 0.5);
+      }
+    }
+  }
 
   // ── 1E. INTERLACING ─────────────────────────────────────────────────────
   // Lignes paires et impaires capturées à des instants légèrement différents
@@ -218,6 +266,15 @@ void main() {
       float b = u_dropoutIntensity * (1.0 - dist * 0.75);
       col = mix(col, vec3(0.88 + hash(v_uv * 250.0 + fr) * 0.12), b);
     }
+  }
+
+  // ── 1I-BIS. AC BEAT (adapté de LazarusOverlook CC0) ─────────────────────
+  if (u_acBeatAmt > 0.001) {
+    float beatPhase = fract(u_time * u_acBeatSpeed * 0.1);
+    float beatPos   = abs(uv.y - beatPhase);
+    float beatWide  = smoothstep(0.15, 0.0, beatPos);
+    float beatNoise = 0.7 + 0.3 * hash(vec2(0.0, uv.y * 0.1 + u_time * 0.2));
+    col *= 1.0 + u_acBeatAmt * beatWide * beatNoise;
   }
 
   // ── 1I. SCANLINES CRT ───────────────────────────────────────────────────

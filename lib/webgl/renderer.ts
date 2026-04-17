@@ -29,6 +29,14 @@ export interface VHSParams {
   dropoutIntensity: number
   interlace: number
   scanlineIntensity: number
+  // Tape crease + AC beat (CC0 LazarusOverlook)
+  tapeCreaseAmt: number
+  tapeCreaseSpeed: number
+  tapeCreaseJitter: number
+  tapeCreaseDiscolor: number
+  tapeCreaseSmear: number
+  acBeatAmt: number
+  acBeatSpeed: number
   // Pass 2 — Internet 90s recompression
   jpegQuality: number
   jpegBlockSize: number
@@ -64,6 +72,13 @@ export const DEFAULT_VHS_PARAMS: VHSParams = {
   dropoutIntensity: 0.78,
   interlace: 0.55,
   scanlineIntensity: 0.76,
+  tapeCreaseAmt: 0.35,
+  tapeCreaseSpeed: 0.5,
+  tapeCreaseJitter: 0.15,
+  tapeCreaseDiscolor: 0.8,
+  tapeCreaseSmear: 0.3,
+  acBeatAmt: 0.08,
+  acBeatSpeed: 0.15,
   jpegQuality: 58,
   jpegBlockSize: 8,
   colorDepth: 0.45,
@@ -238,6 +253,13 @@ export class VHSRenderer {
         u_dropoutIntensity:  p.dropoutIntensity,
         u_interlace:         p.interlace,
         u_scanlineIntensity: p.scanlineIntensity,
+        u_tapeCreaseAmt:      p.tapeCreaseAmt,
+        u_tapeCreaseSpeed:    p.tapeCreaseSpeed,
+        u_tapeCreaseJitter:   p.tapeCreaseJitter,
+        u_tapeCreaseDiscolor: p.tapeCreaseDiscolor,
+        u_tapeCreaseSmear:    p.tapeCreaseSmear,
+        u_acBeatAmt:          p.acBeatAmt,
+        u_acBeatSpeed:        p.acBeatSpeed,
         // Pass 2
         u_jpegQuality:       p.jpegQuality,
         u_jpegBlockSize:     p.jpegBlockSize,

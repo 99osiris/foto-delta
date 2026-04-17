@@ -202,6 +202,16 @@ export default function ShaderControls({ hidePanelPresets = false }: { hidePanel
             <Slider label="Dropout count" value={vhsParams.dropoutCount} min={0} max={20} step={1} decimals={0} onChange={vS('dropoutCount')} />
             <Slider label="Dropout max length" value={vhsParams.dropoutMaxLen} min={0} max={300} step={1} decimals={0} onChange={vS('dropoutMaxLen')} />
             <Slider label="Dropout intensity" value={vhsParams.dropoutIntensity} min={0} max={1} onChange={vS('dropoutIntensity')} />
+
+            <SectionLabel>TAPE CREASE</SectionLabel>
+            <Slider label="Tape crease amount" value={vhsParams.tapeCreaseAmt} min={0} max={1} onChange={vS('tapeCreaseAmt')} />
+            <Slider label="Crease speed" value={vhsParams.tapeCreaseSpeed} min={0.1} max={2} step={0.05} onChange={vS('tapeCreaseSpeed')} />
+            <Slider label="Crease jitter" value={vhsParams.tapeCreaseJitter} min={0} max={1} onChange={vS('tapeCreaseJitter')} />
+            <Slider label="Crease discolor" value={vhsParams.tapeCreaseDiscolor} min={0} max={2} step={0.05} onChange={vS('tapeCreaseDiscolor')} />
+            <Slider label="Crease smear" value={vhsParams.tapeCreaseSmear} min={0} max={2} step={0.05} onChange={vS('tapeCreaseSmear')} />
+            <Slider label="AC beat amount" value={vhsParams.acBeatAmt} min={0} max={0.5} step={0.01} onChange={vS('acBeatAmt')} />
+            <Slider label="AC beat speed" value={vhsParams.acBeatSpeed} min={0} max={1} step={0.01} onChange={vS('acBeatSpeed')} />
+
             <Slider label="Scanlines" value={vhsParams.scanlineIntensity} min={0} max={1} onChange={vS('scanlineIntensity')} />
 
             <SectionLabel>PASS 2 — RECOMPRESSION INTERNET</SectionLabel>

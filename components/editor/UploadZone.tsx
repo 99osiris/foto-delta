@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useState } from 'react'
 import { useEditorStore } from '@/lib/store/editor'
+import { validateMediaFile } from '@/lib/validate-media-file'
 
 export default function UploadZone() {
   const { setFile } = useEditorStore()
@@ -10,17 +11,10 @@ export default function UploadZone() {
 
   const validateAndSet = async (f: File) => {
     setError(null)
-    if (f.type.startsWith('video/')) {
-      const url = URL.createObjectURL(f)
-      const video = document.createElement('video')
-      video.preload = 'metadata'
-      video.src = url
-      await new Promise<void>(res => { video.onloadedmetadata = () => res() })
-      URL.revokeObjectURL(url)
-      if (video.duration > 15) {
-        setError('Videos must be 15 seconds or less.')
-        return
-      }
+    const err = await validateMediaFile(f)
+    if (err) {
+      setError(err)
+      return
     }
     setFile(f)
   }
@@ -29,12 +23,12 @@ export default function UploadZone() {
     e.preventDefault()
     setDragOver(false)
     const f = e.dataTransfer.files[0]
-    if (f) validateAndSet(f)
+    if (f) void validateAndSet(f)
   }
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
-    if (f) validateAndSet(f)
+    if (f) void validateAndSet(f)
   }
 
   return (

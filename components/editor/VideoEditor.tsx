@@ -50,7 +50,11 @@ export default function VideoEditor({ fileUrl }: { fileUrl: string }) {
         if (stopped) return
         if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
           renderer.loadSource(video)
-          renderer.render(useEditorStore.getState().activeParams(), video.currentTime)
+          const s = useEditorStore.getState()
+          renderer.render(s.activeParams(), video.currentTime, {
+            enabled: s.gradeEnabled,
+            params: s.gradeParams,
+          })
         }
         raf = requestAnimationFrame(loop)
       }

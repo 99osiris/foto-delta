@@ -3,8 +3,10 @@ import {
   FilterMode,
   VHSParams,
   DigiParams,
+  GradeParams,
   DEFAULT_VHS_PARAMS,
   DEFAULT_DIGI_PARAMS,
+  DEFAULT_GRADE_PARAMS,
 } from '../webgl/renderer'
 
 /** Hi8 '98 — tuned from DEFAULT_VHS_PARAMS */
@@ -69,6 +71,12 @@ interface EditorStore {
 
   showUnlockModal: boolean
   setShowUnlockModal: (v: boolean) => void
+
+  gradeEnabled: boolean
+  gradeParams: GradeParams
+  setGradeEnabled: (v: boolean) => void
+  setGradeParam: <K extends keyof GradeParams>(key: K, value: GradeParams[K]) => void
+  resetGradeParams: () => void
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
@@ -132,4 +140,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   showUnlockModal: false,
   setShowUnlockModal: (v) => set({ showUnlockModal: v }),
+
+  gradeEnabled: false,
+  gradeParams: { ...DEFAULT_GRADE_PARAMS },
+  setGradeEnabled: (v) => set({ gradeEnabled: v }),
+  setGradeParam: (key, value) =>
+    set((s) => ({ gradeParams: { ...s.gradeParams, [key]: value } })),
+  resetGradeParams: () => set({ gradeParams: { ...DEFAULT_GRADE_PARAMS } }),
 }))

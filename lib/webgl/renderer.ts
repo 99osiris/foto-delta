@@ -3,11 +3,49 @@ import { createProgram, setUniforms } from '../shaders/shader-utils'
 import vertSrc      from '../shaders/quad.vert'
 import vhsFragSrc   from '../shaders/vhs.frag'
 import digiFragSrc  from '../shaders/digicam.frag'
+import gradeFragSrc from '../shaders/grade.frag'
 
 export type FilterMode = 'vhs' | 'digicam'
 
+export interface GradeParams {
+  masterHue: number
+  shadowHue: number
+  midHue: number
+  highHue: number
+  masterSat: number
+  shadowSat: number
+  midSat: number
+  highSat: number
+  masterVal: number
+  shadowVal: number
+  midVal: number
+  highVal: number
+  contrast: number
+  pivot: number
+  tintStrength: number
+  tintColor: [number, number, number]
+}
+
+export const DEFAULT_GRADE_PARAMS: GradeParams = {
+  masterHue: 0,
+  shadowHue: 0,
+  midHue: 0,
+  highHue: 0,
+  masterSat: 1.0,
+  shadowSat: 1.0,
+  midSat: 1.0,
+  highSat: 1.0,
+  masterVal: 1.0,
+  shadowVal: 0.0,
+  midVal: 0.0,
+  highVal: 0.0,
+  contrast: 1.0,
+  pivot: 0.5,
+  tintStrength: 0.0,
+  tintColor: [1.0, 1.0, 1.0],
+}
+
 export interface VHSParams {
-  // Pass 1 — VHS analog
   chromaShift: number
   chromaShiftRandom: number
   lumaSmear: number
@@ -29,7 +67,6 @@ export interface VHSParams {
   dropoutIntensity: number
   interlace: number
   scanlineIntensity: number
-  // Tape crease + AC beat (CC0 LazarusOverlook)
   tapeCreaseAmt: number
   tapeCreaseSpeed: number
   tapeCreaseJitter: number
@@ -37,13 +74,11 @@ export interface VHSParams {
   tapeCreaseSmear: number
   acBeatAmt: number
   acBeatSpeed: number
-  // Pass 2 — Internet 90s recompression
   jpegQuality: number
   jpegBlockSize: number
   colorDepth: number
   ringing: number
   ringingWidth: number
-  // Display + levels
   blackCrush: number
   whiteCrush: number
   colorCast: [number, number, number]
@@ -134,13 +169,21 @@ export const DEFAULT_DIGI_PARAMS: DigiParams = {
   bloomIntensity: 0.35,
 }
 
+export type GradeRenderOptions = { enabled: boolean; params: GradeParams }
+
 export class VHSRenderer {
   private gl: WebGL2RenderingContext
   private programs: Record<FilterMode, WebGLProgram>
+  private gradeProgram: WebGLProgram
   private activeProgram: WebGLProgram
   private activeMode: FilterMode = 'vhs'
   private texture: WebGLTexture
   private startTime: number
+  private vao: WebGLVertexArrayObject
+  private fbo: WebGLFramebuffer | null = null
+  private fboTexture: WebGLTexture | null = null
+  private fboW = 0
+  private fboH = 0
 
   constructor(canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
@@ -150,10 +193,11 @@ export class VHSRenderer {
       vhs:     createProgram(gl, vertSrc, vhsFragSrc),
       digicam: createProgram(gl, vertSrc, digiFragSrc),
     }
+    this.gradeProgram = createProgram(gl, vertSrc, gradeFragSrc)
     this.activeProgram = this.programs.vhs
     this.texture  = this.initTexture()
     this.startTime = Date.now()
-    this.setupQuad()
+    this.vao = this.setupQuad()
   }
 
   setMode(mode: FilterMode) {
@@ -176,52 +220,64 @@ export class VHSRenderer {
     return tex
   }
 
-  private setupQuad() {
+  private setupQuad(): WebGLVertexArrayObject {
     const { gl } = this
     const vao = gl.createVertexArray()!
     gl.bindVertexArray(vao)
     const buf = gl.createBuffer()!
     gl.bindBuffer(gl.ARRAY_BUFFER, buf)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW)
-    for (const prog of Object.values(this.programs)) {
+    const allPrograms = [...Object.values(this.programs), this.gradeProgram]
+    for (const prog of allPrograms) {
       const loc = gl.getAttribLocation(prog, 'a_position')
       gl.enableVertexAttribArray(loc)
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
     }
     gl.bindVertexArray(vao)
+    return vao
   }
 
-  loadSource(source: HTMLImageElement | HTMLVideoElement | ImageBitmap) {
-    const { gl, texture } = this
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource)
-    const w =
-      source instanceof HTMLVideoElement
-        ? source.videoWidth
-        : source instanceof HTMLImageElement
-          ? source.naturalWidth
-          : source.width
-    const h =
-      source instanceof HTMLVideoElement
-        ? source.videoHeight
-        : source instanceof HTMLImageElement
-          ? source.naturalHeight
-          : source.height
-    const isPot = (n: number) => (n & (n - 1)) === 0 && n > 0
-    if (w > 0 && h > 0 && isPot(w) && isPot(h)) {
-      gl.generateMipmap(gl.TEXTURE_2D)
-    } else {
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    }
-  }
-
-  render(params: VHSParams | DigiParams, timeOverride?: number) {
+  private ensureFbo(w: number, h: number) {
+    if (w <= 0 || h <= 0) return
     const { gl } = this
-    const t = timeOverride ?? (Date.now() - this.startTime) / 1000
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.useProgram(this.activeProgram)
+    if (this.fbo && w === this.fboW && h === this.fboH) return
 
+    if (this.fbo) {
+      gl.deleteFramebuffer(this.fbo)
+      this.fbo = null
+    }
+    if (this.fboTexture) {
+      gl.deleteTexture(this.fboTexture)
+      this.fboTexture = null
+    }
+
+    this.fboW = w
+    this.fboH = h
+    const tex = gl.createTexture()!
+    gl.bindTexture(gl.TEXTURE_2D, tex)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+    const fb = gl.createFramebuffer()!
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0)
+    const st = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    if (st !== gl.FRAMEBUFFER_COMPLETE) {
+      gl.deleteFramebuffer(fb)
+      gl.deleteTexture(tex)
+      throw new Error('Framebuffer incomplete')
+    }
+    this.fbo = fb
+    this.fboTexture = tex
+  }
+
+  private setFilterUniforms(params: VHSParams | DigiParams, t: number) {
+    const { gl } = this
     const base = {
       u_time:       t,
       u_resolution: [gl.canvas.width, gl.canvas.height],
@@ -231,7 +287,6 @@ export class VHSRenderer {
       const p = params as VHSParams
       setUniforms(gl, this.activeProgram, {
         ...base,
-        // Pass 1
         u_chromaShift:       p.chromaShift,
         u_chromaShiftRandom: p.chromaShiftRandom,
         u_lumaSmear:         p.lumaSmear,
@@ -260,13 +315,11 @@ export class VHSRenderer {
         u_tapeCreaseSmear:    p.tapeCreaseSmear,
         u_acBeatAmt:          p.acBeatAmt,
         u_acBeatSpeed:        p.acBeatSpeed,
-        // Pass 2
         u_jpegQuality:       p.jpegQuality,
         u_jpegBlockSize:     p.jpegBlockSize,
         u_colorDepth:        p.colorDepth,
         u_ringing:           p.ringing,
         u_ringingWidth:      p.ringingWidth,
-        // Display
         u_blackCrush:        p.blackCrush,
         u_whiteCrush:        p.whiteCrush,
         u_colorCast:         p.colorCast,
@@ -297,12 +350,93 @@ export class VHSRenderer {
         u_bloomIntensity:  p.bloomIntensity,
       })
     }
+  }
+
+  loadSource(source: HTMLImageElement | HTMLVideoElement | ImageBitmap) {
+    const { gl, texture } = this
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource)
+    const w =
+      source instanceof HTMLVideoElement
+        ? source.videoWidth
+        : source instanceof HTMLImageElement
+          ? source.naturalWidth
+          : source.width
+    const h =
+      source instanceof HTMLVideoElement
+        ? source.videoHeight
+        : source instanceof HTMLImageElement
+          ? source.naturalHeight
+          : source.height
+    const isPot = (n: number) => (n & (n - 1)) === 0 && n > 0
+    if (w > 0 && h > 0 && isPot(w) && isPot(h)) {
+      gl.generateMipmap(gl.TEXTURE_2D)
+    } else {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    }
+  }
+
+  render(
+    params: VHSParams | DigiParams,
+    timeOverride?: number,
+    grade?: GradeRenderOptions,
+  ) {
+    const { gl } = this
+    const t = timeOverride ?? (Date.now() - this.startTime) / 1000
+    const w = gl.canvas.width
+    const h = gl.canvas.height
+    const useGrade = grade?.enabled === true && this.fboTexture !== undefined
+
+    gl.bindVertexArray(this.vao)
+
+    if (grade?.enabled) {
+      this.ensureFbo(w, h)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo)
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    }
+
+    gl.viewport(0, 0, w, h)
+    gl.useProgram(this.activeProgram)
+    this.setFilterUniforms(params, t)
 
     const texLoc = gl.getUniformLocation(this.activeProgram, 'u_texture')
     gl.uniform1i(texLoc, 0)
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, this.texture)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+    if (grade?.enabled && this.fboTexture) {
+      const p = grade.params
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.viewport(0, 0, w, h)
+      setUniforms(gl, this.gradeProgram, {
+        u_resolution: [w, h],
+        u_masterHue:    p.masterHue,
+        u_shadowHue:    p.shadowHue,
+        u_midHue:       p.midHue,
+        u_highHue:      p.highHue,
+        u_masterSat:    p.masterSat,
+        u_shadowSat:    p.shadowSat,
+        u_midSat:       p.midSat,
+        u_highSat:      p.highSat,
+        u_masterVal:    p.masterVal,
+        u_shadowVal:    p.shadowVal,
+        u_midVal:       p.midVal,
+        u_highVal:      p.highVal,
+        u_contrast:     p.contrast,
+        u_pivot:        p.pivot,
+        u_tintStrength: p.tintStrength,
+        u_tintColor:    p.tintColor,
+      })
+      const gTex = gl.getUniformLocation(this.gradeProgram, 'u_texture')
+      gl.useProgram(this.gradeProgram)
+      gl.uniform1i(gTex, 0)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, this.fboTexture)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    }
   }
 
   async exportPNG(): Promise<Blob> {
@@ -311,10 +445,20 @@ export class VHSRenderer {
     )
   }
 
-  startLoop(getParams: () => VHSParams | DigiParams): () => void {
+  startLoop(
+    getFrame: () => {
+      params: VHSParams | DigiParams
+      gradeEnabled: boolean
+      gradeParams: GradeParams
+    },
+  ): () => void {
     let rafId: number
     const loop = () => {
-      this.render(getParams())
+      const f = getFrame()
+      this.render(f.params, undefined, {
+        enabled: f.gradeEnabled,
+        params: f.gradeParams,
+      })
       rafId = requestAnimationFrame(loop)
     }
     rafId = requestAnimationFrame(loop)
@@ -322,5 +466,15 @@ export class VHSRenderer {
   }
 
   destroy() {
+    const { gl } = this
+    if (this.fbo) {
+      gl.deleteFramebuffer(this.fbo)
+      this.fbo = null
+    }
+    if (this.fboTexture) {
+      gl.deleteTexture(this.fboTexture)
+      this.fboTexture = null
+    }
+    gl.deleteVertexArray(this.vao)
   }
 }

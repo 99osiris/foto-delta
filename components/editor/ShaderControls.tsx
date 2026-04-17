@@ -99,7 +99,10 @@ function applyIntensity(store: ReturnType<typeof useEditorStore.getState>, level
 
 export default function ShaderControls({ hidePanelPresets = false }: { hidePanelPresets?: boolean }) {
   const store = useEditorStore()
-  const { mode, vhsParams, digiParams, setVhsParam, setDigiParam, applyPreset } = store
+  const {
+    mode, vhsParams, digiParams, setVhsParam, setDigiParam, applyPreset,
+    gradeEnabled, gradeParams, setGradeEnabled, setGradeParam, resetGradeParams,
+  } = store
   const [activePreset, setActivePreset] = useState<PresetId>('vhs94')
   const [activeIntensity, setActiveIntensity] = useState<IntensityLevel>('medium')
 
@@ -279,6 +282,72 @@ export default function ShaderControls({ hidePanelPresets = false }: { hidePanel
             </div>
           </>
         )}
+
+        <div style={{ borderTop: '1px solid #1a1a1a', marginTop: 8 }}>
+          <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setGradeEnabled(!gradeEnabled) }}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '10px 0 6px', cursor: 'pointer',
+            }}
+            onClick={() => setGradeEnabled(!gradeEnabled)}
+          >
+            <div style={{ fontSize: 8, letterSpacing: 2, color: '#2a2a2a' }}>COLOUR GRADE</div>
+            <div style={{
+              fontSize: 8, padding: '2px 8px', borderRadius: 2,
+              border: gradeEnabled ? '1px solid #1a3a2a' : '1px solid #1e1e1e',
+              color: gradeEnabled ? '#4ade80' : '#444',
+              background: gradeEnabled ? '#0a1410' : 'transparent',
+            }}>
+              {gradeEnabled ? 'ON' : 'OFF'}
+            </div>
+          </div>
+
+          {gradeEnabled && (
+            <>
+              <SectionLabel>HUE PAR ZONE</SectionLabel>
+              <Slider label="Master hue" value={gradeParams.masterHue} min={-180} max={180} step={0.5} onChange={v => setGradeParam('masterHue', v)} />
+              <Slider label="Shadows hue" value={gradeParams.shadowHue} min={-180} max={180} step={0.5} onChange={v => setGradeParam('shadowHue', v)} />
+              <Slider label="Mids hue" value={gradeParams.midHue} min={-180} max={180} step={0.5} onChange={v => setGradeParam('midHue', v)} />
+              <Slider label="Highs hue" value={gradeParams.highHue} min={-180} max={180} step={0.5} onChange={v => setGradeParam('highHue', v)} />
+
+              <SectionLabel>SATURATION PAR ZONE</SectionLabel>
+              <Slider label="Master sat" value={gradeParams.masterSat} min={0} max={2} onChange={v => setGradeParam('masterSat', v)} />
+              <Slider label="Shadows sat" value={gradeParams.shadowSat} min={0} max={2} onChange={v => setGradeParam('shadowSat', v)} />
+              <Slider label="Mids sat" value={gradeParams.midSat} min={0} max={2} onChange={v => setGradeParam('midSat', v)} />
+              <Slider label="Highs sat" value={gradeParams.highSat} min={0} max={2} onChange={v => setGradeParam('highSat', v)} />
+
+              <SectionLabel>BRIGHTNESS PAR ZONE</SectionLabel>
+              <Slider label="Master val" value={gradeParams.masterVal} min={0} max={2} onChange={v => setGradeParam('masterVal', v)} />
+              <Slider label="Shadows" value={gradeParams.shadowVal} min={-0.5} max={0.5} step={0.01} onChange={v => setGradeParam('shadowVal', v)} />
+              <Slider label="Mids" value={gradeParams.midVal} min={-0.5} max={0.5} step={0.01} onChange={v => setGradeParam('midVal', v)} />
+              <Slider label="Highlights" value={gradeParams.highVal} min={-0.5} max={0.5} step={0.01} onChange={v => setGradeParam('highVal', v)} />
+
+              <SectionLabel>CONTRAST + TINT</SectionLabel>
+              <Slider label="Contrast" value={gradeParams.contrast} min={0.5} max={2.0} onChange={v => setGradeParam('contrast', v)} />
+              <Slider label="Pivot" value={gradeParams.pivot} min={0} max={1} onChange={v => setGradeParam('pivot', v)} />
+              <Slider label="Tint strength" value={gradeParams.tintStrength} min={0} max={1} onChange={v => setGradeParam('tintStrength', v)} />
+
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 9, color: '#444', marginBottom: 6 }}>TINT COLOR R/G/B</div>
+                <Slider label="R" value={gradeParams.tintColor[0]} min={0} max={2} onChange={v => setGradeParam('tintColor', [v, gradeParams.tintColor[1], gradeParams.tintColor[2]])} />
+                <Slider label="G" value={gradeParams.tintColor[1]} min={0} max={2} onChange={v => setGradeParam('tintColor', [gradeParams.tintColor[0], v, gradeParams.tintColor[2]])} />
+                <Slider label="B" value={gradeParams.tintColor[2]} min={0} max={2} onChange={v => setGradeParam('tintColor', [gradeParams.tintColor[0], gradeParams.tintColor[1], v])} />
+              </div>
+
+              <button type="button" onClick={resetGradeParams} style={{
+                width: '100%', padding: '6px 0', fontSize: 9, letterSpacing: 1,
+                border: '1px solid #1e1e1e', borderRadius: 2, color: '#444',
+                background: 'transparent', cursor: 'pointer',
+                fontFamily: "'Courier New', monospace",
+              }}>
+                RESET GRADE
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{ padding: '10px 12px', borderTop: border, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>

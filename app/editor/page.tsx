@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useEditorStore } from '@/lib/store/editor'
+import { useEditorStore, HI8_PARAMS } from '@/lib/store/editor'
 import { checkUnlocked, setUnlocked } from '@/lib/stripe'
-import { HI8_PARAMS } from '@/lib/store/editor'
+import { validateMediaFile } from '@/lib/validate-media-file'
 import PhotoEditor from '@/components/editor/PhotoEditor'
 import VideoEditor from '@/components/editor/VideoEditor'
 import ShaderControls from '@/components/editor/ShaderControls'
@@ -13,16 +13,10 @@ import VhessLogo from '@/components/ui/VhessLogo'
 
 const mono: React.CSSProperties = { fontFamily: "'Courier New', monospace" }
 
-const SHEET_PEEK = 72
-const SHEET_OPEN = 0.62
+const PEEK_HEIGHT = 68
+const OPEN_RATIO = 0.62
 
-const MOBILE_PRESETS = [
-  { id: 'vhs94' as const, label: "VHS '94" },
-  { id: 'digicam02' as const, label: "CAM '02" },
-  { id: 'hi8' as const, label: "HI8 '98" },
-]
-
-function MobilePresetBar() {
+function PresetPills() {
   const mode = useEditorStore(s => s.mode)
   const vhs = useEditorStore(s => s.vhsParams)
   const applyPreset = useEditorStore(s => s.applyPreset)
@@ -35,9 +29,15 @@ function MobilePresetBar() {
     vhs.lumaSmear === HI8_PARAMS.lumaSmear &&
     vhs.colorDepth === HI8_PARAMS.colorDepth
 
+  const presets = [
+    { id: 'vhs94' as const, label: "VHS '94" },
+    { id: 'digicam02' as const, label: "CAM '02" },
+    { id: 'hi8' as const, label: "HI8 '98" },
+  ]
+
   return (
-    <div style={{ display: 'flex', gap: 6, padding: '0 12px' }}>
-      {MOBILE_PRESETS.map(p => {
+    <div style={{ display: 'flex', gap: 6, width: '100%' }}>
+      {presets.map(p => {
         const isActive =
           (p.id === 'vhs94' && mode === 'vhs' && !isHi8) ||
           (p.id === 'digicam02' && mode === 'digicam') ||
@@ -52,7 +52,7 @@ function MobilePresetBar() {
             }}
             style={{
               flex: 1,
-              padding: '5px 12px',
+              padding: '5px 0',
               fontSize: 9,
               letterSpacing: 0.5,
               border: isActive ? '1px solid #1a3a2a' : '1px solid #1e1e1e',
@@ -82,9 +82,12 @@ function EditorInner() {
   const searchParams = useSearchParams()
   const [isMobile, setIsMobile]       = useState(false)
   const [sheetOpen, setSheetOpen]     = useState(false)
+  const [sheetDragging, setSheetDragging] = useState(false)
   const [zoom, setZoom]               = useState(100)
-  const [screenH, setScreenH]         = useState(800)
-  const dragStartY = useRef<number>(0)
+  const [screenH, setScreenH]         = useState(812)
+  const [fileError, setFileError]     = useState<string | null>(null)
+  const touchStartY = useRef(0)
+  const isDragging  = useRef(false)
 
   useEffect(() => {
     const check = () => {
@@ -104,26 +107,48 @@ function EditorInner() {
     }
   }, [searchParams, storeSetUnlocked])
 
-  const handleFile = (f: File) => {
+  const handleFile = async (f: File) => {
+    setFileError(null)
+    const err = await validateMediaFile(f)
+    if (err) {
+      setFileError(err)
+      return
+    }
     setFile(f)
     setSheetOpen(false)
   }
 
-  const onSheetDragStart = (e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+    isDragging.current = false
+    setSheetDragging(false)
   }
-  const onSheetDragEnd = (e: React.TouchEvent) => {
-    const dy = dragStartY.current - e.changedTouches[0].clientY
-    if (dy > 40)       setSheetOpen(true)
-    else if (dy < -40) setSheetOpen(false)
+  const handleHandleTouchMove = (e: React.TouchEvent) => {
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current)
+    if (dy > 5) {
+      isDragging.current = true
+      setSheetDragging(true)
+    }
+  }
+  const handleHandleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging.current) {
+      setSheetOpen(v => !v)
+      setSheetDragging(false)
+      return
+    }
+    const dy = touchStartY.current - e.changedTouches[0].clientY
+    if (dy > 30)       setSheetOpen(true)
+    else if (dy < -30) setSheetOpen(false)
+    isDragging.current = false
+    setSheetDragging(false)
   }
 
-  const sheetHeight = sheetOpen
-    ? Math.round(screenH * SHEET_OPEN)
-    : SHEET_PEEK
+  const sheetH = sheetOpen
+    ? Math.round(screenH * OPEN_RATIO)
+    : PEEK_HEIGHT
 
   const canvasAreaHeight = isMobile
-    ? screenH - 44 - sheetHeight
+    ? screenH - 44 - sheetH
     : undefined
 
   return (
@@ -150,7 +175,7 @@ function EditorInner() {
           <input
             type="file" accept="image/*,video/*"
             style={{ display: 'none' }}
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) void handleFile(f); e.target.value = '' }}
           />
         </label>
         {file && !isMobile && (
@@ -176,7 +201,7 @@ function EditorInner() {
             </div>
           )}
           {file && (
-            <button type="button" onClick={() => { clearFile(); setSheetOpen(false) }} style={{
+            <button type="button" onClick={() => { clearFile(); setSheetOpen(false); setFileError(null) }} style={{
               fontSize: 10, padding: '4px 8px',
               border: '1px solid #2a2a2a', borderRadius: 2,
               color: '#666', background: 'transparent', cursor: 'pointer', letterSpacing: 0.5,
@@ -187,6 +212,15 @@ function EditorInner() {
           <ExportButton />
         </div>
       </div>
+
+      {fileError && (
+        <div style={{
+          padding: '6px 12px', fontSize: 10, color: '#ef4444', letterSpacing: 0.5,
+          borderBottom: '1px solid #2a1a1a', flexShrink: 0, ...mono,
+        }}>
+          {fileError}
+        </div>
+      )}
 
       {isMobile ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -207,38 +241,52 @@ function EditorInner() {
 
           <div
             style={{
-              height: sheetHeight,
+              height: sheetH,
               background: '#0c0c0c',
               borderTop: '1px solid #1a1a1a',
-              display: 'flex', flexDirection: 'column',
-              overflow: 'hidden', flexShrink: 0,
-              transition: 'height 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              flexShrink: 0,
+              transition: sheetDragging ? 'none' : 'height 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
               zIndex: 10,
+              overflow: 'hidden',
             }}
-            onTouchStart={onSheetDragStart}
-            onTouchEnd={onSheetDragEnd}
           >
             <div
               style={{
                 display: 'flex', flexDirection: 'column',
-                alignItems: 'center', padding: '8px 0 4px',
-                cursor: 'pointer', flexShrink: 0,
+                alignItems: 'center', padding: '8px 12px 4px',
+                flexShrink: 0, touchAction: 'none',
+                cursor: 'pointer',
               }}
-              onClick={() => setSheetOpen(v => !v)}
+              onTouchStart={handleHandleTouchStart}
+              onTouchMove={handleHandleTouchMove}
+              onTouchEnd={handleHandleTouchEnd}
+              onClick={() => {
+                if (!isDragging.current) setSheetOpen(v => !v)
+              }}
             >
               <div style={{
                 width: 32, height: 3, borderRadius: 2,
-                background: '#2a2a2a', marginBottom: 6,
+                background: '#2a2a2a', marginBottom: 8,
               }} />
-              <MobilePresetBar />
+              <PresetPills />
             </div>
 
-            <div style={{
-              flex: 1, overflowY: sheetOpen ? 'auto' : 'hidden',
-              opacity: sheetOpen ? 1 : 0,
-              transition: 'opacity 0.2s',
-              minHeight: 0,
-            }}>
+            <div
+              style={{
+                flex: 1,
+                overflowY: sheetOpen ? 'auto' : 'hidden',
+                touchAction: 'pan-y',
+                WebkitOverflowScrolling: 'touch',
+                opacity: sheetOpen ? 1 : 0,
+                transition: 'opacity 0.15s',
+                minHeight: 0,
+              }}
+              onTouchStart={e => e.stopPropagation()}
+              onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+            >
               <ShaderControls hidePanelPresets />
             </div>
           </div>
@@ -279,11 +327,11 @@ function DesktopDropZone({ onFile }: { onFile: (f: File) => void }) {
     <label
       onDragOver={e => { e.preventDefault(); setDrag(true) }}
       onDragLeave={() => setDrag(false)}
-      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) onFile(f) }}
+      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) void onFile(f) }}
       style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
     >
       <input type="file" accept="image/*,video/*" style={{ display: 'none' }}
-        onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
+        onChange={e => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = '' }} />
       <div style={{
         position: 'relative', width: 280, height: 180,
         border: `1px solid ${drag ? '#2a5a3a' : '#1a1a1a'}`,
@@ -321,7 +369,7 @@ function MobileDropZone({ onFile }: { onFile: (f: File) => void }) {
   return (
     <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
       <input type="file" accept="image/*,video/*" style={{ display: 'none' }}
-        onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
+        onChange={e => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = '' }} />
       <div style={{ width: 56, height: 56, border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontSize: 22, color: '#1f1f1f', fontFamily: "'Courier New', monospace" }}>+</span>
       </div>

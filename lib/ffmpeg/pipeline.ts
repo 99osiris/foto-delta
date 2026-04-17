@@ -6,6 +6,7 @@ import {
   type DigiParams,
   type FilterMode,
 } from '../webgl/renderer'
+import { useEditorStore } from '../store/editor'
 
 function seekVideo(video: HTMLVideoElement, t: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -77,7 +78,8 @@ export async function processVideoWithVHS(
         }
         await seekVideo(video, Math.min(t, duration - 1e-4))
         renderer.loadSource(video)
-        renderer.render(params, t)
+        const { gradeEnabled, gradeParams } = useEditorStore.getState()
+        renderer.render(params, t, { enabled: gradeEnabled, params: gradeParams })
         onProgress(Math.min(100, Math.round((t / duration) * 100)))
         t += dt
         requestAnimationFrame(() => void step())

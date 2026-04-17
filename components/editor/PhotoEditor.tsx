@@ -68,9 +68,14 @@ export default function PhotoEditor({ fileUrl, zoom = 100 }: Props) {
       try {
         renderer.loadSource(img)
         stopRef.current?.()
-        stopRef.current = renderer.startLoop(() =>
-          useEditorStore.getState().activeParams()
-        )
+        stopRef.current = renderer.startLoop(() => {
+          const s = useEditorStore.getState()
+          return {
+            params: s.activeParams(),
+            gradeEnabled: s.gradeEnabled,
+            gradeParams: s.gradeParams,
+          }
+        })
         setStatus('ready')
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e)

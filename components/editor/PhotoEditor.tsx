@@ -123,7 +123,7 @@ export default function PhotoEditor({ fileUrl, zoom = 100 }: Props) {
           position: 'absolute',
           fontSize: 9, color: '#4ade80', letterSpacing: 2,
           fontFamily: "'Courier New', monospace",
-          animation: 'fotoPulse 1s ease-in-out infinite',
+          animation: 'vhessPulse 1s ease-in-out infinite',
         }}>
           LOADING...
         </div>

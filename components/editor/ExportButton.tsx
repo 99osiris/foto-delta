@@ -15,7 +15,7 @@ async function addWatermark(blob: Blob): Promise<Blob> {
   ctx.font      = `bold ${size}px "Courier New", monospace`
   ctx.fillStyle = 'rgba(255,255,255,0.45)'
   ctx.textAlign = 'right'
-  ctx.fillText('FOTO', img.width - 12, img.height - 12)
+  ctx.fillText('VHESS', img.width - 12, img.height - 12)
   return new Promise((res, rej) =>
     canvas.toBlob(b => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png')
   )
@@ -46,7 +46,7 @@ export default function ExportButton({ fullWidth = false }: { fullWidth?: boolea
       canvas.toBlob(async (blob) => {
         if (!blob) return
         const final = isUnlocked ? blob : await addWatermark(blob)
-        triggerDownload(final, 'foto-export.png')
+        triggerDownload(final, 'vhess-export.png')
       }, 'image/png')
       return
     }
@@ -60,7 +60,7 @@ export default function ExportButton({ fullWidth = false }: { fullWidth?: boolea
         const { processVideoWithVHS } = await import('@/lib/ffmpeg/pipeline')
         const blob = await processVideoWithVHS(file, activeParams(), mode, setProgress)
         const ext = blob.type.includes('webm') ? 'webm' : 'mp4'
-        triggerDownload(blob, `foto-export.${ext}`)
+        triggerDownload(blob, `vhess-export.${ext}`)
       } catch (e) {
         console.error('Video export failed:', e)
       } finally {

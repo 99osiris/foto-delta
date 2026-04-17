@@ -1,4 +1,4 @@
-const UNLOCK_KEY = 'foto_unlocked'
+const UNLOCK_KEY = 'vhess_unlocked'
 
 export function checkUnlocked(): boolean {
   if (typeof window === 'undefined') return false

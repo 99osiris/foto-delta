@@ -9,6 +9,7 @@ import VideoEditor from '@/components/editor/VideoEditor'
 import ShaderControls from '@/components/editor/ShaderControls'
 import UnlockModal from '@/components/ui/UnlockModal'
 import ExportButton from '@/components/editor/ExportButton'
+import VhessLogo from '@/components/ui/VhessLogo'
 
 const mono: React.CSSProperties = { fontFamily: "'Courier New', monospace" }
 
@@ -135,7 +136,7 @@ function EditorInner() {
         display: 'flex', alignItems: 'center',
         padding: '0 12px', gap: 10, flexShrink: 0, zIndex: 20,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 3, color: '#fff' }}>FOTO</span>
+        <VhessLogo size="topbar" />
         <div style={{ width: 1, height: 16, background: '#1f1f1f' }} />
         <label style={{
           fontSize: 10, padding: '4px 10px',
@@ -301,7 +302,7 @@ function DesktopDropZone({ onFile }: { onFile: (f: File) => void }) {
         })}
         <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 9, color: '#252525', letterSpacing: 1, fontFamily: "'Courier New', monospace" }}>00:00:00:00</div>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 32, fontWeight: 700, color: '#141414', letterSpacing: 6, fontFamily: "'Courier New', monospace" }}>FOTO</span>
+          <span style={{ fontSize: 32, fontWeight: 700, color: '#141414', letterSpacing: 6, fontFamily: "'Courier New', monospace" }}>VHESS</span>
         </div>
         <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, textAlign: 'center', fontSize: 9, color: '#252525', letterSpacing: 2, fontFamily: "'Courier New', monospace" }}>
           {drag ? 'RELEASE TO LOAD' : 'DROP FILE HERE'}

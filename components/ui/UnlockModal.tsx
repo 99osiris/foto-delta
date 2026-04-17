@@ -19,7 +19,7 @@ export default function UnlockModal() {
         role="dialog"
         aria-modal="true"
       >
-        <div style={{ fontSize: 9, letterSpacing: 3, color: '#444', marginBottom: 16 }}>UNLOCK FOTO</div>
+        <div style={{ fontSize: 9, letterSpacing: 3, color: '#444', marginBottom: 16 }}>UNLOCK VHESS</div>
         <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8, letterSpacing: 1 }}>€3.99</div>
         <div style={{ fontSize: 11, color: '#555', lineHeight: 1.8, marginBottom: 20 }}>
           One-time payment.<br />

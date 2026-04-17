@@ -34,17 +34,33 @@ export interface VHSParams {
   vignette: number
 }
 
+// VHS SP 1994 — Sony Betamax/VHS, cassette légèrement usée
 export const DEFAULT_VHS_PARAMS: VHSParams = {
-  jpegQuality: 65, blackCrush: 16, whiteCrush: 230,
-  sharpness: 3.0, sharpnessWidth: 2.0, colorCast: [0.95, 1.05, 1.0],
-  lumaBandwidth: 0.40, chromaI: 0.03, chromaQ: 0.03,
-  lumaVertBleed: 0.40, chromaShift: 3.0,
-  lumaNoiseAmt: 0.020, chromaNoiseAmt: 0.010,
-  jitterFreq: 0.05, jitterAmp: 0.5, jitterRoughness: 0.3,
-  headSwitchHeight: 15, headSwitchAmt: 0.03,
-  bottomDistHeight: 30, bottomDistAmt: 0.40,
-  dropoutCount: 2, dropoutMaxLen: 80, dropoutIntensity: 0.8,
-  scanlineIntensity: 0.75, vignette: 0.3,
+  jpegQuality: 62,
+  blackCrush: 18,
+  whiteCrush: 228,
+  sharpness: 3.5,
+  sharpnessWidth: 2.0,
+  colorCast: [0.93, 1.04, 0.99] as [number, number, number],
+  lumaBandwidth: 0.38,
+  chromaI: 0.06,
+  chromaQ: 0.08,
+  lumaVertBleed: 0.42,
+  chromaShift: 3.5,
+  lumaNoiseAmt: 0.028,
+  chromaNoiseAmt: 0.015,
+  jitterFreq: 0.06,
+  jitterAmp: 0.7,
+  jitterRoughness: 0.35,
+  headSwitchHeight: 18,
+  headSwitchAmt: 0.04,
+  bottomDistHeight: 32,
+  bottomDistAmt: 0.45,
+  dropoutCount: 3,
+  dropoutMaxLen: 90,
+  dropoutIntensity: 0.75,
+  scanlineIntensity: 0.72,
+  vignette: 0.35,
 }
 
 export interface DigiParams {
@@ -68,39 +84,55 @@ export interface DigiParams {
   bloomIntensity: number
 }
 
+// Digicam 2003–2009 — Sony CyberShot DSC-S50 / DSC-T90
 export const DEFAULT_DIGI_PARAMS: DigiParams = {
-  bayerNoise: 0.05, hotPixels: 0.3,
-  lensBlur: 0.5, chromaticAb: 2.5, barrelDistortion: 0.08,
-  jpegBlock: 0.35, jpegChroma: 0.5,
-  shadowCompression: 0.6, midtoneContrast: 0.85, highlightShift: 0.6,
-  saturation: 0.60, cyanBoost: 1.5, shadowCyan: 0.05,
-  blackLift: 0.04, colorMatrix: [0.85, 1.0, 1.18],
-  bloomThreshold: 0.82, bloomRadius: 0.6, bloomIntensity: 0.4,
+  bayerNoise: 0.055,
+  hotPixels: 0.35,
+  lensBlur: 0.52,
+  chromaticAb: 2.8,
+  barrelDistortion: 0.07,
+  jpegBlock: 0.38,
+  jpegChroma: 0.55,
+  shadowCompression: 0.65,
+  midtoneContrast: 0.82,
+  highlightShift: 0.65,
+  saturation: 0.58,
+  cyanBoost: 1.55,
+  shadowCyan: 0.055,
+  blackLift: 0.045,
+  colorMatrix: [0.84, 1.0, 1.2] as [number, number, number],
+  bloomThreshold: 0.8,
+  bloomRadius: 0.65,
+  bloomIntensity: 0.42,
 }
 
-export const PRESET_HI8_VHS: Partial<VHSParams> = {
-  jpegQuality: 75,
-  chromaShift: 1.5,
-  chromaI: 0.015,
-  chromaQ: 0.012,
-  jitterAmp: 0.2,
-  jitterFreq: 0.03,
-  headSwitchHeight: 6,
-  headSwitchAmt: 0.015,
-  bottomDistHeight: 15,
-  bottomDistAmt: 0.2,
-  lumaNoiseAmt: 0.015,
-  chromaNoiseAmt: 0.005,
-  scanlineIntensity: 0.90,
-  colorCast: [0.92, 1.02, 1.06],
-  sharpness: 2.0,
+// Hi8 1998 — Sony Handycam CCD-TRV série
+export const HI8_PARAMS: VHSParams = {
+  jpegQuality: 78,
+  blackCrush: 12,
+  whiteCrush: 235,
+  sharpness: 2.2,
+  sharpnessWidth: 1.5,
+  colorCast: [0.94, 1.02, 1.04] as [number, number, number],
+  lumaBandwidth: 0.58,
+  chromaI: 0.04,
+  chromaQ: 0.05,
+  lumaVertBleed: 0.28,
+  chromaShift: 2.0,
+  lumaNoiseAmt: 0.018,
+  chromaNoiseAmt: 0.009,
+  jitterFreq: 0.04,
+  jitterAmp: 0.3,
+  jitterRoughness: 0.25,
+  headSwitchHeight: 8,
+  headSwitchAmt: 0.02,
+  bottomDistHeight: 16,
+  bottomDistAmt: 0.22,
   dropoutCount: 1,
-  vignette: 0.2,
-}
-
-export const PRESET_HI8_DIGI: Partial<DigiParams> = {
-  lensBlur: 0.3, jpegBlock: 0.15, shadowCyan: 0.02,
-  saturation: 0.8, cyanBoost: 1.15, bayerNoise: 0.02,
+  dropoutMaxLen: 60,
+  dropoutIntensity: 0.65,
+  scanlineIntensity: 0.85,
+  vignette: 0.22,
 }
 
 export class VHSRenderer {

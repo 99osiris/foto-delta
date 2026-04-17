@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/lib/store/editor'
+import { DEFAULT_VHS_PARAMS, DEFAULT_DIGI_PARAMS } from '@/lib/webgl/renderer'
 import ExportButton from '@/components/editor/ExportButton'
 
 const mono: React.CSSProperties = { fontFamily: "'Courier New', monospace" }
@@ -64,21 +65,31 @@ type IntensityLevel = keyof typeof INTENSITY_LEVELS
 function applyIntensity(store: ReturnType<typeof useEditorStore.getState>, level: IntensityLevel) {
   const mul = INTENSITY_LEVELS[level]
   const { mode } = store
+
   if (mode === 'vhs') {
-    store.setVhsParam('chromaShift',    Math.min(12,  3    * mul))
-    store.setVhsParam('jitterAmp',      Math.min(5,   0.5  * mul))
-    store.setVhsParam('lumaNoiseAmt',   Math.min(0.15, 0.02 * mul))
-    store.setVhsParam('chromaNoiseAmt', Math.min(0.10, 0.01 * mul))
-    store.setVhsParam('chromaI',        Math.min(0.2,  0.03 * mul))
-    store.setVhsParam('chromaQ',        Math.min(0.2,  0.03 * mul))
-    store.setVhsParam('dropoutCount',   Math.min(20,  Math.round(2 * mul)))
-    store.setVhsParam('headSwitchHeight', Math.min(60, 15 * mul))
-    store.setVhsParam('scanlineIntensity', Math.max(0.4, 0.75 - (mul - 1) * 0.1))
+    const base = DEFAULT_VHS_PARAMS
+    store.setVhsParam('chromaShift',       Math.min(12,   base.chromaShift       * mul))
+    store.setVhsParam('jitterAmp',         Math.min(5,    base.jitterAmp         * mul))
+    store.setVhsParam('lumaNoiseAmt',      Math.min(0.15, base.lumaNoiseAmt      * mul))
+    store.setVhsParam('chromaNoiseAmt',    Math.min(0.10, base.chromaNoiseAmt    * mul))
+    store.setVhsParam('dropoutCount',      Math.min(20,   Math.round(base.dropoutCount * mul)))
+    store.setVhsParam('headSwitchHeight',  Math.min(60,   base.headSwitchHeight  * mul))
+    store.setVhsParam('bottomDistAmt',     Math.min(1.0,  base.bottomDistAmt     * mul))
+    store.setVhsParam('chromaI',           Math.min(0.2,  base.chromaI           * mul))
+    store.setVhsParam('chromaQ',           Math.min(0.2,  base.chromaQ           * mul))
+    store.setVhsParam('vignette',          Math.min(1.0,  base.vignette          * mul))
+    store.setVhsParam('jpegQuality',       Math.max(0,    100 - (100 - base.jpegQuality) * mul))
+    store.setVhsParam('scanlineIntensity', Math.max(0.4,  base.scanlineIntensity - (mul - 1) * 0.08))
   } else {
-    store.setDigiParam('bayerNoise',   Math.min(0.12, 0.05 * mul))
-    store.setDigiParam('jpegBlock',    Math.min(1.0,  0.35 * mul))
-    store.setDigiParam('lensBlur',     Math.min(1.0,  0.5  * mul))
-    store.setDigiParam('chromaticAb',  Math.min(8, 2.5 * mul))
+    const base = DEFAULT_DIGI_PARAMS
+    store.setDigiParam('bayerNoise',     Math.min(0.15, base.bayerNoise      * mul))
+    store.setDigiParam('jpegBlock',      Math.min(1.0,  base.jpegBlock       * mul))
+    store.setDigiParam('jpegChroma',     Math.min(1.0,  base.jpegChroma      * mul))
+    store.setDigiParam('chromaticAb',    Math.min(8.0,  base.chromaticAb     * mul))
+    store.setDigiParam('lensBlur',       Math.min(1.0,  base.lensBlur        * mul))
+    store.setDigiParam('bloomIntensity', Math.min(1.0,  base.bloomIntensity  * mul))
+    store.setDigiParam('shadowCyan',     Math.min(0.15, base.shadowCyan      * mul))
+    store.setDigiParam('hotPixels',      Math.min(1.0,  base.hotPixels       * mul))
   }
 }
 

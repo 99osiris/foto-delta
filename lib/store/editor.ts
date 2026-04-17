@@ -48,19 +48,23 @@ interface EditorStore {
 // Hi8 '98 — hybrid preset, VHS mode with tuned params
 const HI8_PARAMS: VHSParams = {
   ...DEFAULT_VHS_PARAMS,
+  jpegQuality: 75,
   chromaShift: 1.5,
-  chromaBlurI: 0.015,
-  chromaBlurQ: 0.015,
+  chromaI: 0.015,
+  chromaQ: 0.012,
   jitterAmp: 0.2,
   jitterFreq: 0.03,
   headSwitchHeight: 6,
-  headSwitchAmount: 0.015,
-  noiseY: 0.015,
-  noiseC: 0.005,
-  scanlineIntensity: 0.88,
+  headSwitchAmt: 0.015,
+  bottomDistHeight: 15,
+  bottomDistAmt: 0.2,
+  lumaNoiseAmt: 0.015,
+  chromaNoiseAmt: 0.005,
+  scanlineIntensity: 0.90,
   colorCast: [0.92, 1.02, 1.06] as [number, number, number],
   sharpness: 2.0,
   dropoutCount: 1,
+  vignette: 0.2,
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({

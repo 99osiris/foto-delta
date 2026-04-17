@@ -7,80 +7,100 @@ import digiFragSrc  from '../shaders/digicam.frag'
 export type FilterMode = 'vhs' | 'digicam'
 
 export interface VHSParams {
-  // VHS mode params
-  chromaShift: number
-  chromaBlurI: number
-  chromaBlurQ: number
+  jpegQuality: number
+  blackCrush: number
+  whiteCrush: number
+  sharpness: number
+  sharpnessWidth: number
+  colorCast: [number, number, number]
   lumaBandwidth: number
+  chromaI: number
+  chromaQ: number
   lumaVertBleed: number
+  chromaShift: number
+  lumaNoiseAmt: number
+  chromaNoiseAmt: number
   jitterFreq: number
   jitterAmp: number
   jitterRoughness: number
   headSwitchHeight: number
-  headSwitchAmount: number
-  noiseY: number
-  noiseC: number
+  headSwitchAmt: number
+  bottomDistHeight: number
+  bottomDistAmt: number
   dropoutCount: number
   dropoutMaxLen: number
   dropoutIntensity: number
   scanlineIntensity: number
-  sharpness: number
-  sharpnessWidth: number
-  colorCast: [number, number, number]
-  blackCrush: number
-  whiteCrush: number
-}
-
-export interface DigiParams {
-  // Digicam mode params
-  sensorNoise: number
-  jpegBlock: number
-  lensBlur: number
-  chromaticAberration: number
-  shadowCyan: number
-  saturation: number
-  cyanBoost: number
-  highlightBlowout: number
-  blackLift: number
-  colorCast: [number, number, number]
-  chromaShift: number
-  noiseY: number
+  vignette: number
 }
 
 export const DEFAULT_VHS_PARAMS: VHSParams = {
-  chromaShift: 3, chromaBlurI: 0.03, chromaBlurQ: 0.03,
-  lumaBandwidth: 0.4, lumaVertBleed: 0.4,
+  jpegQuality: 65, blackCrush: 16, whiteCrush: 230,
+  sharpness: 3.0, sharpnessWidth: 2.0, colorCast: [0.95, 1.05, 1.0],
+  lumaBandwidth: 0.40, chromaI: 0.03, chromaQ: 0.03,
+  lumaVertBleed: 0.40, chromaShift: 3.0,
+  lumaNoiseAmt: 0.020, chromaNoiseAmt: 0.010,
   jitterFreq: 0.05, jitterAmp: 0.5, jitterRoughness: 0.3,
-  headSwitchHeight: 15, headSwitchAmount: 0.03,
-  noiseY: 0.02, noiseC: 0.01,
+  headSwitchHeight: 15, headSwitchAmt: 0.03,
+  bottomDistHeight: 30, bottomDistAmt: 0.40,
   dropoutCount: 2, dropoutMaxLen: 80, dropoutIntensity: 0.8,
-  scanlineIntensity: 0.75, sharpness: 3.0, sharpnessWidth: 2,
-  colorCast: [0.95, 1.05, 1.0], blackCrush: 16, whiteCrush: 230,
+  scanlineIntensity: 0.75, vignette: 0.3,
+}
+
+export interface DigiParams {
+  bayerNoise: number
+  hotPixels: number
+  lensBlur: number
+  chromaticAb: number
+  barrelDistortion: number
+  jpegBlock: number
+  jpegChroma: number
+  shadowCompression: number
+  midtoneContrast: number
+  highlightShift: number
+  saturation: number
+  cyanBoost: number
+  shadowCyan: number
+  blackLift: number
+  colorMatrix: [number, number, number]
+  bloomThreshold: number
+  bloomRadius: number
+  bloomIntensity: number
 }
 
 export const DEFAULT_DIGI_PARAMS: DigiParams = {
-  sensorNoise: 0.04,
-  jpegBlock: 0.3,
-  lensBlur: 0.6,
-  chromaticAberration: 2.0,
-  shadowCyan: 0.04,
-  saturation: 0.65,
-  cyanBoost: 1.4,
-  highlightBlowout: 0.88,
-  blackLift: 0.05,
-  colorCast: [0.85, 1.0, 1.15],
-  chromaShift: 1.5,
-  noiseY: 0.025,
+  bayerNoise: 0.05, hotPixels: 0.3,
+  lensBlur: 0.5, chromaticAb: 2.5, barrelDistortion: 0.08,
+  jpegBlock: 0.35, jpegChroma: 0.5,
+  shadowCompression: 0.6, midtoneContrast: 0.85, highlightShift: 0.6,
+  saturation: 0.60, cyanBoost: 1.5, shadowCyan: 0.05,
+  blackLift: 0.04, colorMatrix: [0.85, 1.0, 1.18],
+  bloomThreshold: 0.82, bloomRadius: 0.6, bloomIntensity: 0.4,
 }
 
-// Hi8 '98 — blend preset, sits between VHS and Digicam
 export const PRESET_HI8_VHS: Partial<VHSParams> = {
-  chromaShift: 1.5, jitterAmp: 0.2, headSwitchHeight: 6,
-  noiseY: 0.015, scanlineIntensity: 0.88, colorCast: [0.92, 1.02, 1.06],
+  jpegQuality: 75,
+  chromaShift: 1.5,
+  chromaI: 0.015,
+  chromaQ: 0.012,
+  jitterAmp: 0.2,
+  jitterFreq: 0.03,
+  headSwitchHeight: 6,
+  headSwitchAmt: 0.015,
+  bottomDistHeight: 15,
+  bottomDistAmt: 0.2,
+  lumaNoiseAmt: 0.015,
+  chromaNoiseAmt: 0.005,
+  scanlineIntensity: 0.90,
+  colorCast: [0.92, 1.02, 1.06],
+  sharpness: 2.0,
+  dropoutCount: 1,
+  vignette: 0.2,
 }
+
 export const PRESET_HI8_DIGI: Partial<DigiParams> = {
   lensBlur: 0.3, jpegBlock: 0.15, shadowCyan: 0.02,
-  saturation: 0.8, cyanBoost: 1.15, sensorNoise: 0.02,
+  saturation: 0.8, cyanBoost: 1.15, bayerNoise: 0.02,
 }
 
 export class VHSRenderer {
@@ -95,7 +115,6 @@ export class VHSRenderer {
     const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
     if (!gl) throw new Error('WebGL2 not supported in this browser')
     this.gl = gl
-    // Compile both shaders upfront — fast, avoids stutter on first mode switch
     this.programs = {
       vhs:     createProgram(gl, vertSrc, vhsFragSrc),
       digicam: createProgram(gl, vertSrc, digiFragSrc),
@@ -133,7 +152,6 @@ export class VHSRenderer {
     const buf = gl.createBuffer()!
     gl.bindBuffer(gl.ARRAY_BUFFER, buf)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW)
-    // Bind position attribute for BOTH programs
     for (const prog of Object.values(this.programs)) {
       const loc = gl.getAttribLocation(prog, 'a_position')
       gl.enableVertexAttribArray(loc)
@@ -182,44 +200,54 @@ export class VHSRenderer {
       const p = params as VHSParams
       setUniforms(gl, this.activeProgram, {
         ...base,
-        u_chromaShift:       p.chromaShift,
-        u_chromaBlurI:       p.chromaBlurI,
-        u_chromaBlurQ:       p.chromaBlurQ,
-        u_lumaBandwidth:     p.lumaBandwidth,
-        u_lumaVertBleed:     p.lumaVertBleed,
-        u_jitterFreq:        p.jitterFreq,
-        u_jitterAmp:         p.jitterAmp,
-        u_jitterRoughness:   p.jitterRoughness,
-        u_headSwitchHeight:  p.headSwitchHeight,
-        u_headSwitchAmount:  p.headSwitchAmount,
-        u_noiseY:            p.noiseY,
-        u_noiseC:            p.noiseC,
-        u_dropoutCount:      p.dropoutCount,
-        u_dropoutMaxLen:     p.dropoutMaxLen,
-        u_dropoutIntensity:  p.dropoutIntensity,
+        u_jpegQuality:      p.jpegQuality,
+        u_blackCrush:       p.blackCrush,
+        u_whiteCrush:       p.whiteCrush,
+        u_sharpness:        p.sharpness,
+        u_sharpnessWidth:   p.sharpnessWidth,
+        u_colorCast:        p.colorCast,
+        u_lumaBandwidth:    p.lumaBandwidth,
+        u_chromaI:          p.chromaI,
+        u_chromaQ:          p.chromaQ,
+        u_lumaVertBleed:    p.lumaVertBleed,
+        u_chromaShift:      p.chromaShift,
+        u_lumaNoiseAmt:     p.lumaNoiseAmt,
+        u_chromaNoiseAmt:   p.chromaNoiseAmt,
+        u_jitterFreq:       p.jitterFreq,
+        u_jitterAmp:        p.jitterAmp,
+        u_jitterRoughness:  p.jitterRoughness,
+        u_headSwitchHeight: p.headSwitchHeight,
+        u_headSwitchAmt:    p.headSwitchAmt,
+        u_bottomDistHeight: p.bottomDistHeight,
+        u_bottomDistAmt:    p.bottomDistAmt,
+        u_dropoutCount:     p.dropoutCount,
+        u_dropoutMaxLen:    p.dropoutMaxLen,
+        u_dropoutIntensity: p.dropoutIntensity,
         u_scanlineIntensity: p.scanlineIntensity,
-        u_sharpness:         p.sharpness,
-        u_sharpnessWidth:    p.sharpnessWidth,
-        u_colorCast:         p.colorCast,
-        u_blackCrush:        p.blackCrush,
-        u_whiteCrush:        p.whiteCrush,
+        u_vignette:          p.vignette,
       })
     } else {
       const p = params as DigiParams
       setUniforms(gl, this.activeProgram, {
         ...base,
-        u_sensorNoise:          p.sensorNoise,
-        u_jpegBlock:            p.jpegBlock,
-        u_lensBlur:             p.lensBlur,
-        u_chromaticAberration:  p.chromaticAberration,
-        u_shadowCyan:           p.shadowCyan,
-        u_saturation:           p.saturation,
-        u_cyanBoost:            p.cyanBoost,
-        u_highlightBlowout:     p.highlightBlowout,
-        u_blackLift:            p.blackLift,
-        u_colorCast:            p.colorCast,
-        u_chromaShift:          p.chromaShift,
-        u_noiseY:               p.noiseY,
+        u_bayerNoise:        p.bayerNoise,
+        u_hotPixels:         p.hotPixels,
+        u_lensBlur:          p.lensBlur,
+        u_chromaticAb:       p.chromaticAb,
+        u_barrelDistortion:  p.barrelDistortion,
+        u_jpegBlock:         p.jpegBlock,
+        u_jpegChroma:        p.jpegChroma,
+        u_shadowCompression: p.shadowCompression,
+        u_midtoneContrast:   p.midtoneContrast,
+        u_highlightShift:    p.highlightShift,
+        u_saturation:        p.saturation,
+        u_cyanBoost:         p.cyanBoost,
+        u_shadowCyan:        p.shadowCyan,
+        u_blackLift:         p.blackLift,
+        u_colorMatrix:       p.colorMatrix,
+        u_bloomThreshold:    p.bloomThreshold,
+        u_bloomRadius:       p.bloomRadius,
+        u_bloomIntensity:    p.bloomIntensity,
       })
     }
 
@@ -247,7 +275,5 @@ export class VHSRenderer {
   }
 
   destroy() {
-    // Do not call loseContext() — it poisons the canvas for React StrictMode remounts.
-    // The browser GC handles context cleanup when the canvas leaves the DOM.
   }
 }

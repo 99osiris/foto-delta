@@ -1,50 +1,66 @@
 import { create } from 'zustand'
 import {
   FilterMode,
-  VHSParams,  DigiParams,
-  DEFAULT_VHS_PARAMS, DEFAULT_DIGI_PARAMS,
+  VHSParams,
+  DigiParams,
+  DEFAULT_VHS_PARAMS,
+  DEFAULT_DIGI_PARAMS,
 } from '../webgl/renderer'
 
 type FileType = 'photo' | 'video' | null
 
 interface EditorStore {
-  // File
   file: File | null
   fileType: FileType
   fileUrl: string | null
   setFile: (file: File) => void
   clearFile: () => void
 
-  // Mode
   mode: FilterMode
   setMode: (m: FilterMode) => void
 
-  // VHS params
   vhsParams: VHSParams
   setVhsParam: <K extends keyof VHSParams>(key: K, value: VHSParams[K]) => void
   resetVhsParams: () => void
 
-  // Digicam params
   digiParams: DigiParams
   setDigiParam: <K extends keyof DigiParams>(key: K, value: DigiParams[K]) => void
   resetDigiParams: () => void
 
-  // Active params selector — returns whichever mode is active
+  // Returns current params for the active mode — always fresh, never memoized
   activeParams: () => VHSParams | DigiParams
 
-  // Unlock
+  // Apply a named preset — sets mode + resets params in one call
+  applyPreset: (preset: 'vhs94' | 'digicam02' | 'hi8') => void
+
   isUnlocked: boolean
   setUnlocked: (v: boolean) => void
 
-  // Processing (video)
   isProcessing: boolean
   progress: number
   setProcessing: (v: boolean) => void
   setProgress: (v: number) => void
 
-  // UI
   showUnlockModal: boolean
   setShowUnlockModal: (v: boolean) => void
+}
+
+// Hi8 '98 — hybrid preset, VHS mode with tuned params
+const HI8_PARAMS: VHSParams = {
+  ...DEFAULT_VHS_PARAMS,
+  chromaShift: 1.5,
+  chromaBlurI: 0.015,
+  chromaBlurQ: 0.015,
+  jitterAmp: 0.2,
+  jitterFreq: 0.03,
+  headSwitchHeight: 6,
+  headSwitchAmount: 0.015,
+  noiseY: 0.015,
+  noiseC: 0.005,
+  scanlineIntensity: 0.88,
+  colorCast: [0.92, 1.02, 1.06] as [number, number, number],
+  sharpness: 2.0,
+  dropoutCount: 1,
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
@@ -57,7 +73,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     set({
       file,
       fileType: file.type.startsWith('video/') ? 'video' : 'photo',
-      fileUrl:  URL.createObjectURL(file),
+      fileUrl: URL.createObjectURL(file),
     })
   },
   clearFile: () => {
@@ -71,17 +87,31 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   vhsParams: { ...DEFAULT_VHS_PARAMS },
   setVhsParam: (key, value) =>
-    set(s => ({ vhsParams: { ...s.vhsParams, [key]: value } })),
+    set((s) => ({ vhsParams: { ...s.vhsParams, [key]: value } })),
   resetVhsParams: () => set({ vhsParams: { ...DEFAULT_VHS_PARAMS } }),
 
   digiParams: { ...DEFAULT_DIGI_PARAMS },
   setDigiParam: (key, value) =>
-    set(s => ({ digiParams: { ...s.digiParams, [key]: value } })),
+    set((s) => ({ digiParams: { ...s.digiParams, [key]: value } })),
   resetDigiParams: () => set({ digiParams: { ...DEFAULT_DIGI_PARAMS } }),
 
   activeParams: () => {
-    const { mode, vhsParams, digiParams } = get()
-    return mode === 'vhs' ? vhsParams : digiParams
+    const s = get()
+    return s.mode === 'vhs' ? s.vhsParams : s.digiParams
+  },
+
+  applyPreset: (preset) => {
+    switch (preset) {
+      case 'vhs94':
+        set({ mode: 'vhs', vhsParams: { ...DEFAULT_VHS_PARAMS } })
+        break
+      case 'digicam02':
+        set({ mode: 'digicam', digiParams: { ...DEFAULT_DIGI_PARAMS } })
+        break
+      case 'hi8':
+        set({ mode: 'vhs', vhsParams: { ...HI8_PARAMS } })
+        break
+    }
   },
 
   isUnlocked: false,

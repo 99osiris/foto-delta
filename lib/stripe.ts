@@ -12,6 +12,10 @@ export function setUnlocked(): void {
 
 export async function redirectToCheckout(): Promise<void> {
   const res = await fetch('/api/stripe/checkout', { method: 'POST' })
-  const { url } = await res.json()
-  window.location.href = url
+  if (!res.ok) {
+    console.error('Checkout request failed:', res.status)
+    return
+  }
+  const data = (await res.json()) as { url?: string }
+  if (data.url) window.location.href = data.url
 }

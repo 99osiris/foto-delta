@@ -8,26 +8,23 @@ export default function VideoEditor({ fileUrl }: { fileUrl: string }) {
   const videoRef    = useRef<HTMLVideoElement>(null)
   const rendererRef = useRef<VHSRenderer | null>(null)
   const stopLoopRef = useRef<(() => void) | null>(null)
-  const mountedRef  = useRef(false)   // guard against StrictMode double-mount
 
   const { mode } = useEditorStore()
 
   useEffect(() => {
-    if (mountedRef.current) return
-    mountedRef.current = true
-
     const canvas = canvasRef.current
     if (!canvas) return
     try {
       rendererRef.current = new VHSRenderer(canvas)
     } catch (e) {
       console.error('WebGL2 init failed:', e)
+      return
     }
-
     return () => {
       stopLoopRef.current?.()
       stopLoopRef.current = null
-      // Keep rendererRef/mountedRef alive — see PhotoEditor for rationale.
+      rendererRef.current?.destroy()
+      rendererRef.current = null
     }
   }, [])
 
@@ -58,7 +55,10 @@ export default function VideoEditor({ fileUrl }: { fileUrl: string }) {
         raf = requestAnimationFrame(loop)
       }
       raf = requestAnimationFrame(loop)
-      stopLoopRef.current = () => { stopped = true; cancelAnimationFrame(raf) }
+      stopLoopRef.current = () => {
+        stopped = true
+        cancelAnimationFrame(raf)
+      }
       void video.play().catch(() => {})
     }
 

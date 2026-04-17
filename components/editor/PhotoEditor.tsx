@@ -7,30 +7,23 @@ export default function PhotoEditor({ fileUrl }: { fileUrl: string }) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const rendererRef = useRef<VHSRenderer | null>(null)
   const stopLoopRef = useRef<(() => void) | null>(null)
-  const mountedRef  = useRef(false)   // guard against StrictMode double-mount
 
   const { mode } = useEditorStore()
 
   useEffect(() => {
-    // StrictMode calls this twice: mount → cleanup → mount.
-    // Skip the second init if the renderer already exists on this canvas.
-    if (mountedRef.current) return
-    mountedRef.current = true
-
     const canvas = canvasRef.current
     if (!canvas) return
     try {
       rendererRef.current = new VHSRenderer(canvas)
     } catch (e) {
       console.error('WebGL2 init failed:', e)
+      return
     }
-
     return () => {
       stopLoopRef.current?.()
       stopLoopRef.current = null
-      // Keep rendererRef and mountedRef alive so StrictMode's remount skips re-init
-      // and the fileUrl effect (which also reruns) finds a valid renderer.
-      // On real unmount the component instance is destroyed, taking all refs with it.
+      rendererRef.current?.destroy()
+      rendererRef.current = null
     }
   }, [])
 

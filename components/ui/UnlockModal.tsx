@@ -2,35 +2,45 @@
 import { useEditorStore } from '@/lib/store/editor'
 import { redirectToCheckout } from '@/lib/stripe'
 
+const mono: React.CSSProperties = { fontFamily: "'Courier New', monospace" }
+
 export default function UnlockModal() {
   const { setShowUnlockModal } = useEditorStore()
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}
       onClick={() => setShowUnlockModal(false)}
+      onKeyDown={e => e.key === 'Escape' && setShowUnlockModal(false)}
+      role="presentation"
     >
       <div
-        className="bg-zinc-900 border border-zinc-700 rounded-lg p-8 max-w-sm w-full mx-4"
+        style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', padding: '28px 32px', width: 320, ...mono }}
         onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
-        <h2 className="text-lg font-bold text-white mb-2">Unlock FOTO</h2>
-        <p className="text-zinc-400 text-sm mb-6">
-          One-time payment. Clean exports, video processing, all filters forever.
-        </p>
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => void redirectToCheckout()}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded transition-colors"
-          >
-            Unlock — €3.99
-          </button>
-          <button
-            onClick={() => setShowUnlockModal(false)}
-            className="w-full py-2 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
-          >
-            Maybe later
-          </button>
+        <div style={{ fontSize: 9, letterSpacing: 3, color: '#444', marginBottom: 16 }}>UNLOCK FOTO</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8, letterSpacing: 1 }}>€3.99</div>
+        <div style={{ fontSize: 11, color: '#555', lineHeight: 1.8, marginBottom: 20 }}>
+          One-time payment.<br />
+          Clean exports — no watermark.<br />
+          Video processing up to 15 seconds.<br />
+          All presets and filters, forever.
         </div>
+        <button
+          type="button"
+          onClick={() => void redirectToCheckout()}
+          style={{ width: '100%', padding: '10px 0', fontSize: 10, letterSpacing: 2, border: '1px solid #1a3a2a', borderRadius: 2, color: '#4ade80', background: '#0a1410', cursor: 'pointer', marginBottom: 8, ...mono }}
+        >
+          UNLOCK NOW
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowUnlockModal(false)}
+          style={{ width: '100%', padding: '8px 0', fontSize: 9, letterSpacing: 1, border: '1px solid #1a1a1a', borderRadius: 2, color: '#444', background: 'transparent', cursor: 'pointer', ...mono }}
+        >
+          MAYBE LATER
+        </button>
       </div>
     </div>
   )

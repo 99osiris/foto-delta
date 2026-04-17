@@ -40,7 +40,8 @@ vec3 applyHue(vec3 c, float h) {
 }
 
 void main() {
-  vec3  col = texture(u_texture, v_uv).rgb;
+  vec2  gradeUV = vec2(v_uv.x, 1.0 - v_uv.y);
+  vec3  col = texture(u_texture, gradeUV).rgb;
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
 
   // Zone masks (adapté de lil_sue CC0)
